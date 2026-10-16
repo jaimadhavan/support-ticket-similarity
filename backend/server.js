@@ -137,36 +137,119 @@ app.get('/api/tickets/search', async (req, res) => {
             return res.status(400).json({ error: 'Keyword parameter is required' });
         }
         
-        // Full-text search using PostgreSQL's tsvector
-        const query = `
-            SELECT 
-                ticket_id,
-                category,
-                subject,
-                description,
-                resolution_notes,
-                tags,
-                created_at,
-                status,
-                ts_rank(
-                    to_tsvector('english', coalesce(subject, '') || ' ' || coalesce(description, '') || ' ' || coalesce(resolution_notes, '')),
-                    plainto_tsquery('english', $1)
-                ) as relevance
-            FROM tickets
-            WHERE 
-                to_tsvector('english', coalesce(subject, '') || ' ' || coalesce(description, '') || ' ' || coalesce(resolution_notes, ''))
-                @@ plainto_tsquery('english', $1)
-                OR $1 = ANY(tags)
-            ORDER BY relevance DESC, created_at DESC
-            LIMIT 20
-        `;
+        // Split the input into individual words for better sentence matching
+        const words = keyword.trim().split(/\s+/).filter(word => word.length > 0);
         
-        const result = await pool.query(query, [keyword]);
+        if (words.length === 0) {
+            return res.status(400).json({ error: 'Please enter at least one word' });
+        }
+        
+        // If only one word, use simple search
+        if (words.length === 1) {
+            const query = `
+                SELECT 
+                    ticket_id,
+                    category,
+                    subject,
+                    description,
+                    resolution_notes,
+                    tags,
+                    created_at,
+                    status,
+                    ts_rank(
+                        to_tsvector('english', coalesce(subject, '') || ' ' || coalesce(description, '') || ' ' || coalesce(resolution_notes, '')),
+                        plainto_tsquery('english', $1)
+                    ) as relevance
+                FROM tickets
+                WHERE 
+                    to_tsvector('english', coalesce(subject, '') || ' ' || coalesce(description, '') || ' ' || coalesce(resolution_notes, ''))
+                    @@ plainto_tsquery('english', $1)
+                    OR $1 = ANY(tags)
+                ORDER BY relevance DESC, created_at DESC
+                LIMIT 5
+            `;
+            
+            const result = await pool.query(query, [keyword]);
+            
+            // Add matchedWords to each ticket for consistency
+            const ticketsWithMatches = result.rows.map(ticket => ({
+                ...ticket,
+                matchCount: 1,
+                matchedWords: [keyword]
+            }));
+            
+            res.json({
+                keyword,
+                count: ticketsWithMatches.length,
+                tickets: ticketsWithMatches
+            });
+            return;
+        }
+        
+        // For multiple words, search for each word and combine results
+        const searchPromises = words.map(word => {
+            const query = `
+                SELECT 
+                    ticket_id,
+                    category,
+                    subject,
+                    description,
+                    resolution_notes,
+                    tags,
+                    created_at,
+                    status,
+                    ts_rank(
+                        to_tsvector('english', coalesce(subject, '') || ' ' || coalesce(description, '') || ' ' || coalesce(resolution_notes, '')),
+                        plainto_tsquery('english', $1)
+                    ) as relevance
+                FROM tickets
+                WHERE 
+                    to_tsvector('english', coalesce(subject, '') || ' ' || coalesce(description, '') || ' ' || coalesce(resolution_notes, ''))
+                    @@ plainto_tsquery('english', $1)
+                    OR $1 = ANY(tags)
+            `;
+            return pool.query(query, [word]);
+        });
+        
+        const results = await Promise.all(searchPromises);
+        
+        // Combine results and track which words matched each ticket
+        const ticketMap = new Map();
+        
+        results.forEach((result, wordIndex) => {
+            const matchedWord = words[wordIndex];
+            result.rows.forEach(ticket => {
+                const ticketId = ticket.ticket_id;
+                if (ticketMap.has(ticketId)) {
+                    const existing = ticketMap.get(ticketId);
+                    existing.matchCount += 1;
+                    existing.matchedWords.push(matchedWord);
+                    existing.relevance = Math.max(existing.relevance, ticket.relevance);
+                } else {
+                    ticketMap.set(ticketId, {
+                        ...ticket,
+                        matchCount: 1,
+                        matchedWords: [matchedWord]
+                    });
+                }
+            });
+        });
+        
+        // Convert to array and sort by match count (descending), then relevance
+        const combinedTickets = Array.from(ticketMap.values())
+            .sort((a, b) => {
+                if (b.matchCount !== a.matchCount) {
+                    return b.matchCount - a.matchCount;
+                }
+                return b.relevance - a.relevance;
+            })
+            .slice(0, 5); // Limit to top 5 results
         
         res.json({
             keyword,
-            count: result.rows.length,
-            tickets: result.rows
+            words: words,
+            count: combinedTickets.length,
+            tickets: combinedTickets
         });
     } catch (error) {
         console.error('Error searching tickets:', error);

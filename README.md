@@ -112,7 +112,9 @@ Loads tickets from the JSON file into the database.
 ```
 GET /api/tickets/search?keyword=<keyword>
 ```
-Searches for tickets matching the keyword in subject, description, resolution notes, or tags.
+Searches for tickets matching the keyword(s) in subject, description, resolution notes, or tags.
+- For single words: Returns up to 5 tickets ranked by relevance
+- For multiple words: Returns up to 5 tickets ranked by word match count, then relevance
 
 ### Get All Tickets
 ```
@@ -129,10 +131,23 @@ Returns a specific ticket by its ticket_id.
 ## Using the Application
 
 1. Open `http://localhost:4200` in your browser
-2. Enter a keyword in the search box (e.g., "login", "sync", "billing", "api")
+2. Enter a keyword or sentence in the search box:
+   - Single keyword: "login", "sync", "billing", "api"
+   - Multiple words: "login password reset", "billing invoice issue", "sync data quality"
 3. Click "Search" or press Enter
-4. View matching tickets with their details and resolution notes
-5. Use the "Clear" button to reset the search
+4. View matching tickets (maximum 5 results) with their details and resolution notes
+5. For multi-word searches, tickets are ranked by how many words matched
+6. Use the "Clear" button to reset the search
+
+### Search Features
+
+- **Result Limit**: Maximum 5 tickets returned per search
+- **Word Matching**: When searching with multiple words, the system:
+  - Splits the input into individual words
+  - Searches for each word separately across ticket subject, description, resolution notes, and tags
+  - Combines results and counts how many words matched each ticket
+  - Ranks results by match count (highest first), then by relevance score
+- **Relevance Scoring**: PostgreSQL full-text search provides relevance scores for single-word searches
 
 ## Database Schema
 

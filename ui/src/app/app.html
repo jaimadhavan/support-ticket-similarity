@@ -10,7 +10,7 @@
         type="text"
         [(ngModel)]="keyword"
         (keyup.enter)="searchTickets()"
-        placeholder="Enter keyword (e.g., login, sync, billing, api...)"
+        placeholder="Enter keyword or sentence (e.g., 'login password reset', 'billing invoice issue'...)"
         class="search-input"
       />
       <button
@@ -88,6 +88,17 @@
               </div>
               <span class="ticket-date">{{ ticket.created_at }}</span>
             </div>
+            
+            @if (ticket.matchedWords && ticket.matchedWords.length > 0) {
+              <div class="matched-words">
+                <strong>Matched words:</strong>
+                <div class="matched-words-list">
+                  @for (word of ticket.matchedWords; track word) {
+                    <span class="matched-word">{{ word }}</span>
+                  }
+                </div>
+              </div>
+            }
             
             @if (ticket.relevance) {
               <div class="relevance-score">

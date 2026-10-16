@@ -13,6 +13,8 @@ interface Ticket {
   created_at: string;
   status: string;
   relevance?: number;
+  matchCount?: number;
+  matchedWords?: string[];
 }
 
 @Component({
