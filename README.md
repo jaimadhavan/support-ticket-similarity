@@ -90,7 +90,7 @@ Before searching, you need to load the historical ticket data:
 
 **Or** you can load tickets via API directly:
 ```bash
-curl -X POST http://localhost:3000/api/tickets/load
+curl -X POST http://localhost:3000/api/tickets/loadHistoricalTickets
 ```
 
 The loading process:
@@ -104,7 +104,7 @@ The loading process:
 
 ### Load Tickets
 ```
-POST /api/tickets/load
+POST /api/tickets/loadHistoricalTickets
 ```
 Loads tickets from the JSON file into the database.
 

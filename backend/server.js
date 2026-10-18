@@ -15,6 +15,13 @@ app.use(express.json());
 // Routes
 app.use('/api/tickets', ticketsRoute);
 
+app.use((req, res) => {
+    res.status(404).json({
+        error: `Route not found: ${req.method} ${req.originalUrl}`
+    });
+});
+
+
 // Start server
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

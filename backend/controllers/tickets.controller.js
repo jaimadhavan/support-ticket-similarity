@@ -1,18 +1,19 @@
 // API: Load tickets from JSON file
 const path = require('path');
 const fs = require('fs');
+const pool = require('../db');
 
 module.exports = {
     loadHistoricalTickets: async function (req, res) {
         console.log('Loading historical tickets...');
     try {
-        const ticketsPath = path.join(__dirname, '..', 'starter_kit', 'data', 'tickets.json');
+        const ticketsPath = path.join(__dirname, '..', '..', 'starter_kit', 'data', 'tickets.json');
         
         if (!fs.existsSync(ticketsPath)) {
             return res.status(404).json({ error: 'tickets.json file not found' });
         }
         
-        const rawData = fs.readFileSync(ticketsPath, 'utf8');
+        const rawData = await fs.promises.readFile(ticketsPath, 'utf8');
         const data = JSON.parse(rawData);
         
         if (!data.tickets || !Array.isArray(data.tickets)) {
@@ -76,12 +77,12 @@ module.exports = {
 removeHistoricalTickets: async (req, res) => {
     try {
         const query = `
-            DELETE * FROM tickets`;
+            DELETE FROM tickets`;
         
         const result = await pool.query(query);
         if(result.rowCount > 0) {
             res.json({
-                message: 'Historical tickets hidden successfully',
+                message: 'Historical tickets deleted successfully',
                 total: result.rowCount
             });
         } else {
@@ -97,7 +98,7 @@ removeHistoricalTickets: async (req, res) => {
 },
 
 // API: Search tickets by keyword
-searchTiketByKeyword: async function(req, res) {
+searchTicketByKeyword: async function(req, res) {
     try {
         const { keyword, limit } = req.query;
         
@@ -111,7 +112,7 @@ searchTiketByKeyword: async function(req, res) {
         
         // Split the input into individual words for better sentence matching
         const words = keyword.trim().split(/\s+/).filter(word => word.length > 0);
-        
+        console.log('Words:', words);
         if (words.length === 0) {
             return res.status(400).json({ error: 'Please enter at least one word' });
         }
@@ -129,20 +130,20 @@ searchTiketByKeyword: async function(req, res) {
                     created_at,
                     status,
                     ts_rank(
-                        to_tsvector('english', coalesce(subject, '') || ' ' || coalesce(description, '') || ' ' || coalesce(resolution_notes, '') || ' ' || coalesce(tags, '')),
+                        to_tsvector('english', coalesce(subject, '') || ' ' || coalesce(description, '') || ' ' || coalesce(resolution_notes, '') || ' ' || coalesce(array_to_string(tags, ' '), '')),
                         plainto_tsquery('english', $1)
                     ) as relevance
                 FROM tickets
                 WHERE 
-                    to_tsvector('english', coalesce(subject, '') || ' ' || coalesce(description, '') || ' ' || coalesce(resolution_notes, '') || ' ' || coalesce(tags, ''))
+                    to_tsvector('english', coalesce(subject, '') || ' ' || coalesce(description, '') || ' ' || coalesce(resolution_notes, '') || ' ' || coalesce(array_to_string(tags, ' '), ''))
                     @@ plainto_tsquery('english', $1)
                     OR $1 = ANY(tags)
                 ORDER BY relevance DESC, created_at DESC
-                LIMIT ${validLimit}
+                LIMIT $2
             `;
             
-            const result = await pool.query(query, [keyword]);
-            
+            const result = await pool.query(query, [keyword, validLimit]);
+            console.log('Result:', result.rows);
             // Add matchedWords to each ticket for consistency
             const ticketsWithMatches = result.rows.map(ticket => ({
                 ...ticket,
@@ -155,7 +156,6 @@ searchTiketByKeyword: async function(req, res) {
                 count: ticketsWithMatches.length,
                 tickets: ticketsWithMatches
             });
-            return;
             return;
         }
         
@@ -172,16 +172,18 @@ searchTiketByKeyword: async function(req, res) {
                     created_at,
                     status,
                     ts_rank(
-                        to_tsvector('english', coalesce(subject, '') || ' ' || coalesce(description, '') || ' ' || coalesce(resolution_notes, '') || ' ' || coalesce(tags, '')),
+                        to_tsvector('english', coalesce(subject, '') || ' ' || coalesce(description, '') || ' ' || coalesce(resolution_notes, '') || ' ' || coalesce(array_to_string(tags, ' '), '')),
                         plainto_tsquery('english', $1)
                     ) as relevance
                 FROM tickets
                 WHERE 
-                    to_tsvector('english', coalesce(subject, '') || ' ' || coalesce(description, '') || ' ' || coalesce(resolution_notes, '') || ' ' || coalesce(tags, ''))
+                    to_tsvector('english', coalesce(subject, '') || ' ' || coalesce(description, '') || ' ' || coalesce(resolution_notes, '') || ' ' || coalesce(array_to_string(tags, ' '), ''))
                     @@ plainto_tsquery('english', $1)
                     OR $1 = ANY(tags)
+                ORDER BY relevance DESC, created_at DESC
+                LIMIT $2
             `;
-            return pool.query(query, [word]);
+            return pool.query(query, [word, validLimit]);
         });
         
         const results = await Promise.all(searchPromises);

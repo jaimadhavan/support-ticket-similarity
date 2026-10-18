@@ -4,8 +4,6 @@ const router = express.Router();
 
 router.post('/loadHistoricalTickets', ticketsController.loadHistoricalTickets);
 router.delete('/removeHistoricalTickets', ticketsController.removeHistoricalTickets);
-router.get('/search', ticketsController.searchTiketByKeyword);
-router.get('/', ticketsController.getAllTickets);
-router.get('/:ticketId', ticketsController.searchByTicketId);
+router.get('/search', ticketsController.searchTicketByKeyword);
 
 module.exports = router; 

@@ -2,7 +2,7 @@ import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
-
+import { TicketService } from './services/ticket.service';
 interface Ticket {
   ticket_id: string;
   category: string;
@@ -36,7 +36,7 @@ export class App {
   searchPerformed = signal(false);
   copiedTicketId = '';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private ticketService: TicketService) {}
 
   searchTickets() {
     if (!this.keyword.trim()) {
@@ -69,6 +69,19 @@ export class App {
     this.loading.set(true);
     this.error.set('');
 
+//   this.ticketService.loadHistoricalTickets().subscribe({
+//     next: (response: { message: string; total: number; inserted: number; skipped: number }) => {
+//     alert(`Tickets loaded successfully!\nTotal: ${response.total}\nInserted: ${response.inserted}\nSkipped: ${response.skipped}`);
+//     this.loading.set(false);
+//   },
+//   error: (error: any) => {
+//     console.error('Load error:', error);
+//     this.error.set('Failed to load tickets. Please ensure the backend server is running.');
+//     this.loading.set(false);
+//   }
+// });
+
+
     this.http.post<{ message: string; total: number; inserted: number; skipped: number }>(
       `${this.apiUrl}/loadHistoricalTickets`,
       {}
@@ -93,6 +106,8 @@ export class App {
       next: (response) => {
         alert(`${response.message} ${response.total} tickets are deleted`);
         this.removing.set(false);
+        // this.tickets.set([]);
+        this.clearSearch();
       },
       error: (err) => {
         console.error('Remove error:', err);
