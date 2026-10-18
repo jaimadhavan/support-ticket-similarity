@@ -19,4 +19,16 @@ export class TicketService {
       {}
     );
   }
+
+  removeHistoricalTickets(): Observable<any> {
+    return this.http.delete(
+      `${this.apiUrl}/removeHistoricalTickets`
+    );
+  }
+
+  searchTickets(keyword: string, resultLimit: number): Observable<any> {
+    return this.http.get(
+      `${this.apiUrl}/search?keyword=${encodeURIComponent(keyword)}&limit=${resultLimit}`
+    );
+  }
 }

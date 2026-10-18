@@ -48,73 +48,99 @@ export class App {
     this.error.set('');
     this.searchPerformed.set(true);
 
-    this.http.get<{ tickets: Ticket[] }>(
-      `${this.apiUrl}/search?keyword=${encodeURIComponent(this.keyword)}&limit=${this.resultLimit}`
-    )
-      .subscribe({
-        next: (response) => {
-          this.tickets.set(response.tickets);
-          this.loading.set(false);
-        },
-        error: (err) => {
-          console.error('Search error:', err);
-          this.error.set('Failed to search tickets. Please ensure the backend server is running.');
-          this.loading.set(false);
-          this.tickets.set([]);
-        }
-      });
+    this.ticketService.searchTickets(this.keyword,this.resultLimit).subscribe({
+      next: (response: { tickets: Ticket[] }) => {
+        this.tickets.set(response.tickets);
+        this.loading.set(false);
+      },
+      error: (error: any) => {
+        console.error('Search error:', error);
+        this.error.set('Failed to search tickets. Please ensure the backend server is running.');
+        this.loading.set(false);
+        this.tickets.set([]);
+      }
+    });
+
+    // this.http.get<{ tickets: Ticket[] }>(
+    //   `${this.apiUrl}/search?keyword=${encodeURIComponent(this.keyword)}&limit=${this.resultLimit}`
+    // )
+    //   .subscribe({
+    //     next: (response) => {
+    //       this.tickets.set(response.tickets);
+    //       this.loading.set(false);
+    //     },
+    //     error: (err) => {
+    //       console.error('Search error:', err);
+    //       this.error.set('Failed to search tickets. Please ensure the backend server is running.');
+    //       this.loading.set(false);
+    //       this.tickets.set([]);
+    //     }
+    //   });
   }
 
   loadTickets() {
     this.loading.set(true);
     this.error.set('');
 
-//   this.ticketService.loadHistoricalTickets().subscribe({
-//     next: (response: { message: string; total: number; inserted: number; skipped: number }) => {
-//     alert(`Tickets loaded successfully!\nTotal: ${response.total}\nInserted: ${response.inserted}\nSkipped: ${response.skipped}`);
-//     this.loading.set(false);
-//   },
-//   error: (error: any) => {
-//     console.error('Load error:', error);
-//     this.error.set('Failed to load tickets. Please ensure the backend server is running.');
-//     this.loading.set(false);
-//   }
-// });
+  this.ticketService.loadHistoricalTickets().subscribe({
+    next: (response: { message: string; total: number; inserted: number; skipped: number }) => {
+    alert(`Tickets loaded successfully!\nTotal: ${response.total}\nInserted: ${response.inserted}\nSkipped: ${response.skipped}`);
+    this.loading.set(false);
+    this.clearSearch();
+  },
+  error: (error: any) => {
+    console.error('Load error:', error);
+    this.error.set('Failed to load tickets. Please ensure the backend server is running.');
+    this.loading.set(false);
+  }
+});
 
 
-    this.http.post<{ message: string; total: number; inserted: number; skipped: number }>(
-      `${this.apiUrl}/loadHistoricalTickets`,
-      {}
-    ).subscribe({
-      next: (response) => {
-        alert(`Tickets loaded successfully!\nTotal: ${response.total}\nInserted: ${response.inserted}\nSkipped: ${response.skipped}`);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        console.error('Load error:', err);
-        this.error.set('Failed to load tickets. Please ensure the backend server is running.');
-        this.loading.set(false);
-      }
-    });
+    // this.http.post<{ message: string; total: number; inserted: number; skipped: number }>(
+    //   `${this.apiUrl}/loadHistoricalTickets`,
+    //   {}
+    // ).subscribe({
+    //   next: (response) => {
+    //     alert(`Tickets loaded successfully!\nTotal: ${response.total}\nInserted: ${response.inserted}\nSkipped: ${response.skipped}`);
+    //     this.loading.set(false);
+    //   },
+    //   error: (err) => {
+    //     console.error('Load error:', err);
+    //     this.error.set('Failed to load tickets. Please ensure the backend server is running.');
+    //     this.loading.set(false);
+    //   }
+    // });
   }
 
   removeTickets() {
     this.removing.set(true);
     this.error.set('');
 
-    this.http.delete<{ message: string; total: number }>(`${this.apiUrl}/removeHistoricalTickets`).subscribe({
-      next: (response) => {
-        alert(`${response.message} ${response.total} tickets are deleted`);
+    this.ticketService.removeHistoricalTickets().subscribe({
+      next: (response: { message: string; total: number }) => {
+        alert(`${response.message}`);
         this.removing.set(false);
-        // this.tickets.set([]);
         this.clearSearch();
       },
-      error: (err) => {
-        console.error('Remove error:', err);
+      error: (error: any) => {
         this.error.set('Failed to remove historical tickets. Please ensure the backend server is running.');
         this.removing.set(false);
       }
     });
+
+    // this.http.delete<{ message: string; total: number }>(`${this.apiUrl}/removeHistoricalTickets`).subscribe({
+    //   next: (response) => {
+    //     alert(`${response.message} ${response.total} tickets are deleted`);
+    //     this.removing.set(false);
+    //     // this.tickets.set([]);
+    //     this.clearSearch();
+    //   },
+    //   error: (err) => {
+    //     console.error('Remove error:', err);
+    //     this.error.set('Failed to remove historical tickets. Please ensure the backend server is running.');
+    //     this.removing.set(false);
+    //   }
+    // });
   }
 
   clearSearch() {

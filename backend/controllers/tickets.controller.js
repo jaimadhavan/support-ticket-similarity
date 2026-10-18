@@ -5,7 +5,6 @@ const pool = require('../db');
 
 module.exports = {
     loadHistoricalTickets: async function (req, res) {
-        console.log('Loading historical tickets...');
     try {
         const ticketsPath = path.join(__dirname, '..', '..', 'starter_kit', 'data', 'tickets.json');
         
@@ -87,7 +86,7 @@ removeHistoricalTickets: async (req, res) => {
             });
         } else {
             res.json({
-                message: 'No historical tickets found to hide',
+                message: 'No historical tickets found to delete',
                 total: 0
             });
         }
