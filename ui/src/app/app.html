@@ -42,11 +42,24 @@
         Clear
       </button>
     </div>
-<div class="load-section">
+    <div class="load-section">  
+      <!-- <button
+      (click)="loadTickets()"
+      [disabled]="loading()"
+      class="btn btn-load"
+      title="Load tickets from JSON file into database"
+      >
+        Load Tickets from JSON
+      </button> -->
+   </div> 
+ <div>
+    <details>
+      <summary>Manage Historical Tickets</summary>
+      <div class="load-section">
     <button
       (click)="removeTickets()"
       [disabled]="loading()"
-      class="btn btn-load"
+      class="btn btn-remove"
       title="Remove Historical Tickets"
     >
       Remove Historical Tickets
@@ -58,8 +71,10 @@
       title="Load tickets from JSON file into database"
     >
       Load Tickets from JSON
-    </button>
+    </button> 
     </div>
+
+    </details>
   </div>
 
   @if (error()) {
@@ -85,17 +100,23 @@
             <div class="ticket-header">
               <div class="ticket-field">
                 <span class="field-label">Ticket#:</span>
-                <span class="ticket-id">{{ ticket.ticket_id }}</span>
+                <span class="ticket-id ticket-value">{{ ticket.ticket_id }}</span>
               </div>
               <div class="ticket-field">
                 <span class="field-label">Category:</span>
-                <span class="ticket-category">{{ ticket.category }}</span>
+                <span class="ticket-category ticket-value">{{ ticket.category }}</span>
               </div>
               <div class="ticket-field">
                 <span class="field-label">Status:</span>
-                <span class="ticket-status">{{ ticket.status }}</span>
+                <span class="ticket-status ticket-value">{{ ticket.status }}</span>
               </div>
-            </div>
+              <div class="ticket-field">
+                @if (ticket.relevance) {
+                  <span class="field-label">Relevance:</span>
+                  <span class="ticket-value ticket-relevance">{{ (ticket.relevance * 100).toFixed(1) }}%</span>
+                }
+              </div>
+            </div>            
             
             <h3 class="ticket-subject">{{ ticket.subject }}</h3>
             
@@ -121,7 +142,7 @@
               <p>{{ ticket.resolution_notes }}</p>
             </div>
             
-            <div class="ticket-footer">
+            <!-- <div class="ticket-footer">
               <div class="ticket-tags-section">
                 <span class="field-label">Tags:</span>
                 <div class="ticket-tags">
@@ -132,23 +153,11 @@
               </div>
               <span class="ticket-date">{{ ticket.created_at }}</span>
             </div>
-            
-            <!-- @if (ticket.matchedWords && ticket.matchedWords.length > 0) {
-              <div class="matched-words">
-                <strong>Search Performed Based On:</strong>
-                <div class="matched-words-list">
-                  @for (word of ticket.matchedWords; track word) {
-                    <span class="matched-word">{{ word }}</span>
-                  }
-                </div>
-              </div>
-            } -->
-            
             @if (ticket.relevance) {
               <div class="relevance-score">
                 Relevance: {{ (ticket.relevance * 100).toFixed(1) }}%
               </div>
-            }
+            } -->
           </div>
         }
       </div>

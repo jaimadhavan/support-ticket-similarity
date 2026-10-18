@@ -61,21 +61,6 @@ export class App {
       }
     });
 
-    // this.http.get<{ tickets: Ticket[] }>(
-    //   `${this.apiUrl}/search?keyword=${encodeURIComponent(this.keyword)}&limit=${this.resultLimit}`
-    // )
-    //   .subscribe({
-    //     next: (response) => {
-    //       this.tickets.set(response.tickets);
-    //       this.loading.set(false);
-    //     },
-    //     error: (err) => {
-    //       console.error('Search error:', err);
-    //       this.error.set('Failed to search tickets. Please ensure the backend server is running.');
-    //       this.loading.set(false);
-    //       this.tickets.set([]);
-    //     }
-    //   });
   }
 
   loadTickets() {
@@ -95,21 +80,6 @@ export class App {
   }
 });
 
-
-    // this.http.post<{ message: string; total: number; inserted: number; skipped: number }>(
-    //   `${this.apiUrl}/loadHistoricalTickets`,
-    //   {}
-    // ).subscribe({
-    //   next: (response) => {
-    //     alert(`Tickets loaded successfully!\nTotal: ${response.total}\nInserted: ${response.inserted}\nSkipped: ${response.skipped}`);
-    //     this.loading.set(false);
-    //   },
-    //   error: (err) => {
-    //     console.error('Load error:', err);
-    //     this.error.set('Failed to load tickets. Please ensure the backend server is running.');
-    //     this.loading.set(false);
-    //   }
-    // });
   }
 
   removeTickets() {
@@ -127,20 +97,6 @@ export class App {
         this.removing.set(false);
       }
     });
-
-    // this.http.delete<{ message: string; total: number }>(`${this.apiUrl}/removeHistoricalTickets`).subscribe({
-    //   next: (response) => {
-    //     alert(`${response.message} ${response.total} tickets are deleted`);
-    //     this.removing.set(false);
-    //     // this.tickets.set([]);
-    //     this.clearSearch();
-    //   },
-    //   error: (err) => {
-    //     console.error('Remove error:', err);
-    //     this.error.set('Failed to remove historical tickets. Please ensure the backend server is running.');
-    //     this.removing.set(false);
-    //   }
-    // });
   }
 
   clearSearch() {

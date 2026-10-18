@@ -133,6 +133,13 @@ header p {
   border: 1px solid #1d4ed8;
 }
 
+.btn-remove {
+  background-color: #FF0000;
+  color: white;
+  width: 100%;
+  border: 1px solid red;
+}
+
 .btn-load:hover:not(:disabled) {
   background-color: #1d4ed8;
 }
@@ -222,13 +229,16 @@ header p {
   font-size: 0.875rem;
 }
 
+.ticket-value{
+  font-size: 0.875rem;
+  font-weight: 600; 
+  border-radius: 3px;
+}
+
 .ticket-id {
   background: #fef3c7;
   color: #92400e;
   padding: 0.25rem 0.75rem;
-  border-radius: 3px;
-  font-size: 0.875rem;
-  font-weight: 600;
   font-family: 'Courier New', monospace;
 }
 
@@ -237,8 +247,6 @@ header p {
   color: #1e40af;
   padding: 0.25rem 0.75rem;
   border-radius: 3px;
-  font-size: 0.875rem;
-  font-weight: 600;
   text-transform: uppercase;
 }
 
@@ -247,9 +255,14 @@ header p {
   color: #065f46;
   padding: 0.25rem 0.75rem;
   border-radius: 3px;
-  font-size: 0.875rem;
-  font-weight: 600;
   text-transform: capitalize;
+}
+
+.ticket-relevance {
+  background: rgb(240, 216, 240);
+  color: purple;
+  padding: 0.25rem 0.75rem;
+  border-radius: 3px;
 }
 
 .ticket-subject {
