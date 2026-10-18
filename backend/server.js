@@ -3,10 +3,10 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
-const pool = require('./db');
 const ticketsRoute = require('./routes/tickets.route');
 const app = express();
 const PORT = process.env.PORT || 3000;
+const pool = require('./db');
 
 // Middleware
 app.use(cors());

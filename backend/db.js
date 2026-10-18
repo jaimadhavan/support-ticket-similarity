@@ -6,7 +6,11 @@ const pool = new Pool({
     database: process.env.DB_NAME,
     password: process.env.DB_PASSWORD,
     port: process.env.DB_PORT,
+    max: 20, // 💡 Maximum number of concurrent connections allowed
+    idleTimeoutMillis: 30000, // Close idle connections after 30 seconds
+    connectionTimeoutMillis: 2000 // Return an error if a connection takes > 2 seconds
 });
+
 
 // Test database connection
 pool.connect((err, client, release) => {

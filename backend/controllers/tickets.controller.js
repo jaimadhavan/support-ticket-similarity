@@ -4,6 +4,7 @@ const fs = require('fs');
 
 module.exports = {
     loadHistoricalTickets: async function (req, res) {
+        console.log('Loading historical tickets...');
     try {
         const ticketsPath = path.join(__dirname, '..', 'starter_kit', 'data', 'tickets.json');
         
