@@ -4,16 +4,26 @@
   padding: 0;
 }
 
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
 .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 1rem;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  /* height: 100vh; */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 header {
   text-align: center;
   margin-bottom: 2rem;
+  flex-shrink: 0;
 }
 
 header h1 {
@@ -28,10 +38,11 @@ header p {
 }
 
 .search-section {
-  background: #f5f5f5;
+  background: #f9fafb;
   padding: 1.5rem;
-  border-radius: 8px;
+  border-radius: 4px;
   margin-bottom: 2rem;
+  border: 1px solid #e5e7eb;
 }
 
 .search-box {
@@ -43,15 +54,33 @@ header p {
 .search-input {
   flex: 1;
   padding: 0.75rem 1rem;
-  font-size: 1rem;
-  border: 1px solid #ddd;
+  font-size: 0.875rem;
+  border: 1px solid #d1d5db;
   border-radius: 4px;
   outline: none;
-  transition: border-color 0.3s;
+  transition: border-color 0.2s;
+  background-color: white;
 }
 
 .search-input:focus {
-  border-color: #4CAF50;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+.limit-select {
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  outline: none;
+  background-color: white;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.limit-select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
 }
 
 .btn {
@@ -67,33 +96,45 @@ header p {
   opacity: 0.6;
   cursor: not-allowed;
 }
+.load-section {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  flex-direction: row;
+}
 
 .btn-primary {
-  background-color: #4CAF50;
+  background-color: #0ea5e9;
   color: white;
+  border: 1px solid #0284c7;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: #45a049;
+  background-color: #0284c7;
 }
 
 .btn-secondary {
-  background-color: #6c757d;
-  color: white;
+  background-color: white;
+  color: #374151;
+  border: 1px solid #d1d5db;
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background-color: #5a6268;
+  background-color: #f9fafb;
+  border-color: #9ca3af;
 }
 
 .btn-load {
-  background-color: #2196F3;
+  background-color: #2563eb;
   color: white;
   width: 100%;
+  border: 1px solid #1d4ed8;
 }
 
 .btn-load:hover:not(:disabled) {
-  background-color: #0b7dda;
+  background-color: #1d4ed8;
 }
 
 .error-message {
@@ -114,6 +155,8 @@ header p {
 
 .results-section {
   margin-top: 2rem;
+  overflow: auto;
+  /* max-height: 600px; */
 }
 
 .results-section h2 {
@@ -130,50 +173,83 @@ header p {
 
 .ticket-card {
   background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
   padding: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: box-shadow 0.3s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s;
+  position: relative;
 }
 
 .ticket-card:hover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.ticket-serial {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: #dbeafe;
+  color: #1e40af;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.875rem;
 }
 
 .ticket-header {
   display: flex;
-  gap: 0.5rem;
+  gap: 1.5rem;
   margin-bottom: 1rem;
+  margin-right: 3rem;
   flex-wrap: wrap;
+  align-items: center;
+}
+
+.ticket-field {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.field-label {
+  font-weight: 600;
+  color: #6b7280;
+  font-size: 0.875rem;
 }
 
 .ticket-id {
-  background-color: #e3f2fd;
-  color: #1976d2;
+  background: #fef3c7;
+  color: #92400e;
   padding: 0.25rem 0.75rem;
-  border-radius: 12px;
+  border-radius: 3px;
   font-size: 0.875rem;
   font-weight: 600;
+  font-family: 'Courier New', monospace;
 }
 
 .ticket-category {
-  background-color: #f3e5f5;
-  color: #7b1fa2;
+  background: #eff6ff;
+  color: #1e40af;
   padding: 0.25rem 0.75rem;
-  border-radius: 12px;
+  border-radius: 3px;
   font-size: 0.875rem;
   font-weight: 600;
   text-transform: uppercase;
 }
 
 .ticket-status {
-  background-color: #e8f5e9;
-  color: #388e3c;
+  background: #ecfdf5;
+  color: #065f46;
   padding: 0.25rem 0.75rem;
-  border-radius: 12px;
+  border-radius: 3px;
   font-size: 0.875rem;
   font-weight: 600;
+  text-transform: capitalize;
 }
 
 .ticket-subject {
@@ -193,6 +269,55 @@ header p {
   margin-bottom: 0.25rem;
 }
 
+.resolution-section {
+  background-color: #f0fdf4;
+  padding: 1rem;
+  border-radius: 4px;
+  border-left: 3px solid #16a34a;
+  position: relative;
+}
+
+.resolution-section strong {
+  color: #166534;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.resolution-section p {
+  color: #15803d;
+  line-height: 1.6;
+}
+
+.copy-button {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: #22c55e;
+  color: white;
+  border: none;
+  padding: 0.25rem 0.75rem;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: background-color 0.2s;
+}
+
+.copy-button:hover {
+  background: #16a34a;
+}
+
+.copy-button:active {
+  background: #15803d;
+}
+
+.copy-button.copied {
+  background: #166534;
+}
+
 .ticket-section p {
   color: #666;
   line-height: 1.6;
@@ -201,12 +326,19 @@ header p {
 .ticket-footer {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid #e0e0e0;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.ticket-tags-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
 }
 
 .ticket-tags {
@@ -216,16 +348,19 @@ header p {
 }
 
 .tag {
-  background-color: #f5f5f5;
-  color: #666;
+  background: #f9fafb;
+  color: #4b5563;
   padding: 0.25rem 0.75rem;
-  border-radius: 12px;
+  border-radius: 3px;
   font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid #e5e7eb;
 }
 
 .ticket-date {
   color: #999;
   font-size: 0.875rem;
+  align-self: flex-start;
 }
 
 .relevance-score {

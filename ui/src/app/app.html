@@ -13,6 +13,16 @@
         placeholder="Enter keyword or sentence (e.g., 'login password reset', 'billing invoice issue'...)"
         class="search-input"
       />
+      <select
+        [(ngModel)]="resultLimit"
+        class="limit-select"
+        title="Number of results to show"
+      >
+        <option [ngValue]="3">3 results</option>
+        <option [ngValue]="5">5 results</option>
+        <option [ngValue]="10">10 results</option>
+        <option [ngValue]="20">20 results</option>
+      </select>
       <button
         (click)="searchTickets()"
         [disabled]="loading()"
@@ -32,8 +42,16 @@
         Clear
       </button>
     </div>
-
+<div class="load-section">
     <button
+      (click)="removeTickets()"
+      [disabled]="loading()"
+      class="btn btn-load"
+      title="Remove Historical Tickets"
+    >
+      Remove Historical Tickets
+    </button>
+     <button
       (click)="loadTickets()"
       [disabled]="loading()"
       class="btn btn-load"
@@ -41,6 +59,7 @@
     >
       Load Tickets from JSON
     </button>
+    </div>
   </div>
 
   @if (error()) {
@@ -60,12 +79,22 @@
       <h2>Results for "{{ keyword }}" ({{ tickets().length }} tickets)</h2>
       
       <div class="tickets-list">
-        @for (ticket of tickets(); track ticket.ticket_id) {
+        @for (ticket of tickets(); track ticket.ticket_id; let i = $index) {
           <div class="ticket-card">
+            <div class="ticket-serial">{{ i + 1 }}</div>
             <div class="ticket-header">
-              <span class="ticket-id">{{ ticket.ticket_id }}</span>
-              <span class="ticket-category">{{ ticket.category }}</span>
-              <span class="ticket-status">{{ ticket.status }}</span>
+              <div class="ticket-field">
+                <span class="field-label">Ticket#:</span>
+                <span class="ticket-id">{{ ticket.ticket_id }}</span>
+              </div>
+              <div class="ticket-field">
+                <span class="field-label">Category:</span>
+                <span class="ticket-category">{{ ticket.category }}</span>
+              </div>
+              <div class="ticket-field">
+                <span class="field-label">Status:</span>
+                <span class="ticket-status">{{ ticket.status }}</span>
+              </div>
             </div>
             
             <h3 class="ticket-subject">{{ ticket.subject }}</h3>
@@ -75,30 +104,45 @@
               <p>{{ ticket.description }}</p>
             </div>
             
-            <div class="ticket-section">
+            <div class="ticket-section resolution-section">
               <strong>Resolution:</strong>
+              <button 
+                class="copy-button" 
+                (click)="copyToClipboard(ticket.resolution_notes, $event)"
+                [class.copied]="copiedTicketId === ticket.ticket_id"
+                title="Copy resolution to clipboard"
+              >
+                @if (copiedTicketId === ticket.ticket_id) {
+                  ✓ Copied
+                } @else {
+                  📋 Copy
+                }
+              </button>
               <p>{{ ticket.resolution_notes }}</p>
             </div>
             
             <div class="ticket-footer">
-              <div class="ticket-tags">
-                @for (tag of ticket.tags; track tag) {
-                  <span class="tag">{{ tag }}</span>
-                }
+              <div class="ticket-tags-section">
+                <span class="field-label">Tags:</span>
+                <div class="ticket-tags">
+                  @for (tag of ticket.tags; track tag) {
+                    <span class="tag">{{ tag }}</span>
+                  }
+                </div>
               </div>
               <span class="ticket-date">{{ ticket.created_at }}</span>
             </div>
             
-            @if (ticket.matchedWords && ticket.matchedWords.length > 0) {
+            <!-- @if (ticket.matchedWords && ticket.matchedWords.length > 0) {
               <div class="matched-words">
-                <strong>Matched words:</strong>
+                <strong>Search Performed Based On:</strong>
                 <div class="matched-words-list">
                   @for (word of ticket.matchedWords; track word) {
                     <span class="matched-word">{{ word }}</span>
                   }
                 </div>
               </div>
-            }
+            } -->
             
             @if (ticket.relevance) {
               <div class="relevance-score">

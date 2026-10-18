@@ -28,10 +28,13 @@ export class App {
   private apiUrl = '/api/tickets';
   
   keyword = '';
+  resultLimit = 5;
   tickets = signal<Ticket[]>([]);
   loading = signal(false);
+  removing = signal(false);
   error = signal('');
   searchPerformed = signal(false);
+  copiedTicketId = '';
 
   constructor(private http: HttpClient) {}
 
@@ -45,7 +48,9 @@ export class App {
     this.error.set('');
     this.searchPerformed.set(true);
 
-    this.http.get<{ tickets: Ticket[] }>(`${this.apiUrl}/search?keyword=${encodeURIComponent(this.keyword)}`)
+    this.http.get<{ tickets: Ticket[] }>(
+      `${this.apiUrl}/search?keyword=${encodeURIComponent(this.keyword)}&limit=${this.resultLimit}`
+    )
       .subscribe({
         next: (response) => {
           this.tickets.set(response.tickets);
@@ -65,7 +70,7 @@ export class App {
     this.error.set('');
 
     this.http.post<{ message: string; total: number; inserted: number; skipped: number }>(
-      `${this.apiUrl}/load`,
+      `${this.apiUrl}/loadHistoricalTickets`,
       {}
     ).subscribe({
       next: (response) => {
@@ -80,10 +85,39 @@ export class App {
     });
   }
 
+  removeTickets() {
+    this.removing.set(true);
+    this.error.set('');
+
+    this.http.delete<{ message: string; total: number }>(`${this.apiUrl}/removeHistoricalTickets`).subscribe({
+      next: (response) => {
+        alert(`${response.message} ${response.total} tickets are deleted`);
+        this.removing.set(false);
+      },
+      error: (err) => {
+        console.error('Remove error:', err);
+        this.error.set('Failed to remove historical tickets. Please ensure the backend server is running.');
+        this.removing.set(false);
+      }
+    });
+  }
+
   clearSearch() {
     this.keyword = '';
     this.tickets.set([]);
     this.searchPerformed.set(false);
     this.error.set('');
+  }
+
+  copyToClipboard(text: string, event: Event) {
+    event.stopPropagation();
+    navigator.clipboard.writeText(text).then(() => {
+      this.copiedTicketId = this.tickets().find(t => t.resolution_notes === text)?.ticket_id || '';
+      setTimeout(() => {
+        this.copiedTicketId = '';
+      }, 2000);
+    }).catch(err => {
+      console.error('Failed to copy:', err);
+    });
   }
 }
