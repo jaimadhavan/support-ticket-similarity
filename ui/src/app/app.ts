@@ -12,7 +12,6 @@ interface Ticket {
   tags: string[];
   created_at: string;
   status: string;
-  relevance?: number;
   matchCount?: number;
   matchedWords?: string[];
 }
@@ -34,6 +33,7 @@ export class App {
   removing = signal(false);
   error = signal('');
   searchPerformed = signal(false);
+  matchStatus = signal<'good_match' | 'no_good_match' | null>(null);
   copiedTicketId = '';
 
   constructor(private http: HttpClient, private ticketService: TicketService) {}
@@ -47,10 +47,12 @@ export class App {
     this.loading.set(true);
     this.error.set('');
     this.searchPerformed.set(true);
+    this.matchStatus.set(null);
 
     this.ticketService.searchTickets(this.keyword,this.resultLimit).subscribe({
-      next: (response: { tickets: Ticket[] }) => {
+      next: (response: { tickets: Ticket[]; matchStatus: 'good_match' | 'no_good_match' }) => {
         this.tickets.set(response.tickets);
+        this.matchStatus.set(response.matchStatus);
         this.loading.set(false);
       },
       error: (error: any) => {
@@ -58,6 +60,7 @@ export class App {
         this.error.set('Failed to search tickets. Please ensure the backend server is running.');
         this.loading.set(false);
         this.tickets.set([]);
+        this.matchStatus.set(null);
       }
     });
 
@@ -68,8 +71,16 @@ export class App {
     this.error.set('');
 
   this.ticketService.loadHistoricalTickets().subscribe({
-    next: (response: { message: string; total: number; inserted: number; skipped: number }) => {
-    alert(`Tickets loaded successfully!\nTotal: ${response.total}\nInserted: ${response.inserted}\nSkipped: ${response.skipped}`);
+    next: (response: {
+      message: string;
+      total: number;
+      inserted: number;
+      skipped: number;
+      invalid: number;
+      duplicates: number;
+      failed: number;
+    }) => {
+    alert(`${response.message}\nTotal: ${response.total}\nInserted: ${response.inserted}\nSkipped: ${response.skipped} (invalid: ${response.invalid}, duplicates: ${response.duplicates}, failed: ${response.failed})`);
     this.loading.set(false);
     this.clearSearch();
   },
@@ -103,6 +114,7 @@ export class App {
     this.keyword = '';
     this.tickets.set([]);
     this.searchPerformed.set(false);
+    this.matchStatus.set(null);
     this.error.set('');
   }
 

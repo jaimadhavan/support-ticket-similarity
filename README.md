@@ -96,9 +96,9 @@ curl -X POST http://localhost:3000/api/tickets/loadHistoricalTickets
 The loading process:
 - Reads tickets from `starter_kit/data/tickets.json`
 - Normalizes tickets (ensures all required fields are present)
-- Skips tickets with missing or invalid data
+- Counts tickets with missing or invalid data as skipped
 - Inserts only unique tickets (duplicates are skipped)
-- Returns a summary of total, inserted, and skipped tickets
+- Returns the source total, inserted and skipped totals, and separate invalid, duplicate, and failed counts
 
 ## API Endpoints
 
@@ -107,26 +107,19 @@ The loading process:
 POST /api/tickets/loadHistoricalTickets
 ```
 Loads tickets from the JSON file into the database.
+The response's `total` is the number of source records, and `skipped` equals `invalid + duplicates + failed`.
 
 ### Search Tickets
 ```
-GET /api/tickets/search?keyword=<keyword>
+GET /api/tickets/search?keyword=<keyword>&limit=5
 ```
-Searches for tickets matching the keyword(s) in subject, description, resolution notes, or tags.
-- For single words: Returns up to 5 tickets ranked by relevance
-- For multiple words: Returns up to 5 tickets ranked by word match count, then relevance
+Searches resolved tickets by descriptive terms in subject, description, resolution notes, and tags. The `limit` is optional and capped at 50. Results include `matchedWords` and `matchCount`; `matchStatus` is `good_match` or `no_good_match`. A result is shown when at least two distinct meaningful terms match, or when a one-term query matches that term. Search rank is only used for ordering and is not a probability or confidence score.
 
-### Get All Tickets
+### Remove Historical Tickets
 ```
-GET /api/tickets
+DELETE /api/tickets/removeHistoricalTickets
 ```
-Returns all tickets in the database (for testing).
-
-### Get Ticket by ID
-```
-GET /api/tickets/:ticketId
-```
-Returns a specific ticket by its ticket_id.
+Deletes all tickets from the database.
 
 ## Using the Application
 
@@ -135,19 +128,27 @@ Returns a specific ticket by its ticket_id.
    - Single keyword: "login", "sync", "billing", "api"
    - Multiple words: "login password reset", "billing invoice issue", "sync data quality"
 3. Click "Search" or press Enter
-4. View matching tickets (maximum 5 results) with their details and resolution notes
-5. For multi-word searches, tickets are ranked by how many words matched
+4. View resolved tickets that meet the minimum match rule, along with their matching terms and resolution notes
+5. If no result meets the rule, the UI explains that there is no strong historical match and suggests adding specific details
 6. Use the "Clear" button to reset the search
 
 ### Search Features
 
-- **Result Limit**: Maximum 5 tickets returned per search
-- **Word Matching**: When searching with multiple words, the system:
-  - Splits the input into individual words
-  - Searches for each word separately across ticket subject, description, resolution notes, and tags
-  - Combines results and counts how many words matched each ticket
-  - Ranks results by match count (highest first), then by relevance score
-- **Relevance Scoring**: PostgreSQL full-text search provides relevance scores for single-word searches
+- **Resolved precedents only**: Unresolved tickets are never suggested as past resolutions.
+- **Explainable matching**: Each result displays the distinct meaningful query terms that matched it.
+- **No-good-match behavior**: Generic words are ignored; multi-term searches need at least two distinct meaningful matches before any candidate is presented. Single descriptive-term searches can still return exact-term matches.
+- **Ranking**: Results are ordered by the number of matched terms, then PostgreSQL full-text rank and recency. The rank is an ordering signal, not calibrated confidence.
+
+## Example-ticket acceptance checks
+
+Run the fixture checks from the backend directory with `npm test`. They use all four tickets in `starter_kit/data/new_tickets_example.json` and the historical seed set. Expected behavior:
+
+- NT-1 ranks T-1001 (password reset / email).
+- NT-2 ranks T-1201 (blank revenue chart).
+- NT-3 ranks T-1303 (duplicate charge).
+- NT-4 (Snowflake) yields no strong match rather than a weak integration/sync precedent.
+
+These are fixture-level checks using a simple token-overlap simulation of the meaningful-term policy. They validate the acceptance examples and threshold behavior, but do not validate PostgreSQL stemming, actual query plans, or relevance on production ticket data; those need a database-backed integration evaluation.
 
 ## Database Schema
 

@@ -158,6 +158,10 @@ header p {
   padding: 2rem;
   color: #666;
   font-size: 1.1rem;
+  line-height: 1.6;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 4px;
 }
 
 .results-section {
@@ -256,13 +260,6 @@ header p {
   padding: 0.25rem 0.75rem;
   border-radius: 3px;
   text-transform: capitalize;
-}
-
-.ticket-relevance {
-  background: rgb(240, 216, 240);
-  color: purple;
-  padding: 0.25rem 0.75rem;
-  border-radius: 3px;
 }
 
 .ticket-subject {

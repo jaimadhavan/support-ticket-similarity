@@ -2,6 +2,8 @@
 const path = require('path');
 const fs = require('fs');
 const pool = require('../db');
+const { getSearchTerms, MIN_MATCHED_TERMS } = require('../search-utils');
+const { createLoadSummary } = require('../load-summary');
 
 module.exports = {
     loadHistoricalTickets: async function (req, res) {
@@ -19,19 +21,20 @@ module.exports = {
             return res.status(400).json({ error: 'Invalid tickets.json format' });
         }
         
-        // Normalize tickets
-        const normalizedTickets = data.tickets
-            .map(ticket => normalizeTicket(ticket))
-            .filter(ticket => ticket !== null);
-        
-        console.log(`Total tickets in file: ${data.tickets.length}`);
-        console.log(`Normalized tickets: ${normalizedTickets.length}`);
+        const normalizedTickets = data.tickets.map(ticket => normalizeTicket(ticket));
         
         // Insert tickets with deduplication (ON CONFLICT DO NOTHING)
         let insertedCount = 0;
-        let skippedCount = 0;
+        let invalidCount = 0;
+        let duplicateCount = 0;
+        let failedCount = 0;
         
         for (const ticket of normalizedTickets) {
+            if (!ticket) {
+                invalidCount++;
+                continue;
+            }
+
             try {
                 const query = `
                     INSERT INTO tickets (ticket_id, category, subject, description, resolution_notes, tags, created_at, status)
@@ -53,19 +56,21 @@ module.exports = {
                 if (result.rowCount > 0) {
                     insertedCount++;
                 } else {
-                    skippedCount++;
+                    duplicateCount++;
                 }
             } catch (err) {
                 console.error(`Error inserting ticket ${ticket.ticket_id}:`, err);
+                failedCount++;
             }
         }
-        
-        res.json({
-            message: 'Tickets loaded successfully',
-            total: normalizedTickets.length,
-            inserted: insertedCount,
-            skipped: skippedCount
-        });
+
+        res.json(createLoadSummary(
+            data.tickets.length,
+            insertedCount,
+            invalidCount,
+            duplicateCount,
+            failedCount
+        ));
     } catch (error) {
         console.error('Error loading tickets:', error);
         res.status(500).json({ error: 'Failed to load tickets' });
@@ -109,121 +114,52 @@ searchTicketByKeyword: async function(req, res) {
         const resultLimit = limit ? parseInt(limit, 10) : 5;
         const validLimit = (resultLimit > 0 && resultLimit <= 50) ? resultLimit : 5;
         
-        // Split the input into individual words for better sentence matching
-        const words = keyword.trim().split(/\s+/).filter(word => word.length > 0);
-        console.log('Words:', words);
+        const words = getSearchTerms(keyword);
         if (words.length === 0) {
-            return res.status(400).json({ error: 'Please enter at least one word' });
-        }
-        
-        // If only one word, use simple search
-        if (words.length === 1) {
-            const query = `
-                SELECT 
-                    ticket_id,
-                    category,
-                    subject,
-                    description,
-                    resolution_notes,
-                    tags,
-                    created_at,
-                    status,
-                    ts_rank(
-                        to_tsvector('english', coalesce(subject, '') || ' ' || coalesce(description, '') || ' ' || coalesce(resolution_notes, '') || ' ' || coalesce(array_to_string(tags, ' '), '')),
-                        plainto_tsquery('english', $1)
-                    ) as relevance
-                FROM tickets
-                WHERE 
-                    to_tsvector('english', coalesce(subject, '') || ' ' || coalesce(description, '') || ' ' || coalesce(resolution_notes, '') || ' ' || coalesce(array_to_string(tags, ' '), ''))
-                    @@ plainto_tsquery('english', $1)
-                    OR $1 = ANY(tags)
-                ORDER BY relevance DESC, created_at DESC
-                LIMIT $2
-            `;
-            
-            const result = await pool.query(query, [keyword, validLimit]);
-            console.log('Result:', result.rows);
-            // Add matchedWords to each ticket for consistency
-            const ticketsWithMatches = result.rows.map(ticket => ({
-                ...ticket,
-                matchCount: 1,
-                matchedWords: [keyword]
-            }));
-            
-            res.json({
-                keyword,
-                count: ticketsWithMatches.length,
-                tickets: ticketsWithMatches
+            return res.status(400).json({
+                error: 'Please enter at least one descriptive search term'
             });
-            return;
         }
-        
-        // For multiple words, search for each word and combine results
-        const searchPromises = words.map(word => {
-            const query = `
-                SELECT 
-                    ticket_id,
-                    category,
-                    subject,
-                    description,
-                    resolution_notes,
-                    tags,
-                    created_at,
-                    status,
-                    ts_rank(
-                        to_tsvector('english', coalesce(subject, '') || ' ' || coalesce(description, '') || ' ' || coalesce(resolution_notes, '') || ' ' || coalesce(array_to_string(tags, ' '), '')),
-                        plainto_tsquery('english', $1)
-                    ) as relevance
-                FROM tickets
-                WHERE 
-                    to_tsvector('english', coalesce(subject, '') || ' ' || coalesce(description, '') || ' ' || coalesce(resolution_notes, '') || ' ' || coalesce(array_to_string(tags, ' '), ''))
-                    @@ plainto_tsquery('english', $1)
-                    OR $1 = ANY(tags)
-                ORDER BY relevance DESC, created_at DESC
-                LIMIT $2
-            `;
-            return pool.query(query, [word, validLimit]);
-        });
-        
-        const results = await Promise.all(searchPromises);
-        
-        // Combine results and track which words matched each ticket
-        const ticketMap = new Map();
-        
-        results.forEach((result, wordIndex) => {
-            const matchedWord = words[wordIndex];
-            result.rows.forEach(ticket => {
-                const ticketId = ticket.ticket_id;
-                if (ticketMap.has(ticketId)) {
-                    const existing = ticketMap.get(ticketId);
-                    existing.matchCount += 1;
-                    existing.matchedWords.push(matchedWord);
-                    existing.relevance = Math.max(existing.relevance, ticket.relevance);
-                } else {
-                    ticketMap.set(ticketId, {
-                        ...ticket,
-                        matchCount: 1,
-                        matchedWords: [matchedWord]
-                    });
-                }
-            });
-        });
-        
-        // Convert to array and sort by match count (descending), then relevance
-        const combinedTickets = Array.from(ticketMap.values())
-            .sort((a, b) => {
-                if (b.matchCount !== a.matchCount) {
-                    return b.matchCount - a.matchCount;
-                }
-                return b.relevance - a.relevance;
-            })
-            .slice(0, validLimit); // Limit to user-specified number of results
-        
+
+        const query = `
+            SELECT
+                t.ticket_id,
+                t.category,
+                t.subject,
+                t.description,
+                t.resolution_notes,
+                t.tags,
+                t.created_at,
+                t.status,
+                array_agg(DISTINCT q.term ORDER BY q.term) AS "matchedWords",
+                count(DISTINCT q.term)::int AS "matchCount",
+                max(ts_rank(
+                    to_tsvector('english', coalesce(t.subject, '') || ' ' || coalesce(t.description, '') || ' ' || coalesce(t.resolution_notes, '')),
+                    plainto_tsquery('english', q.term)
+                )) AS relevance
+            FROM tickets t
+            CROSS JOIN unnest($1::text[]) AS q(term)
+            WHERE lower(t.status) = 'resolved'
+              AND (
+                    to_tsvector('english', coalesce(t.subject, '') || ' ' || coalesce(t.description, '') || ' ' || coalesce(t.resolution_notes, ''))
+                    @@ plainto_tsquery('english', q.term)
+                    OR q.term = ANY(t.tags)
+              )
+            GROUP BY t.id, t.ticket_id, t.category, t.subject, t.description,
+                     t.resolution_notes, t.tags, t.created_at, t.status
+            HAVING count(DISTINCT q.term) >= $2
+                OR cardinality($1::text[]) = 1
+            ORDER BY "matchCount" DESC, relevance DESC, t.created_at DESC
+            LIMIT $3
+        `;
+        const result = await pool.query(query, [words, MIN_MATCHED_TERMS, validLimit]);
+        const tickets = result.rows;
+
         res.json({
             keyword,
-            words: words,
-            count: combinedTickets.length,
-            tickets: combinedTickets
+            count: tickets.length,
+            matchStatus: tickets.length > 0 ? 'good_match' : 'no_good_match',
+            tickets
         });
     } catch (error) {
         console.error('Error searching tickets:', error);
@@ -268,6 +204,10 @@ searchByTicketId: async function(req, res) {
 // Normalize ticket data - ensure all required fields are present
 function normalizeTicket(ticket) {
     const requiredFields = ['ticket_id', 'category', 'subject', 'description', 'resolution_notes', 'tags', 'created_at', 'status'];
+
+    if (!ticket || typeof ticket !== 'object' || Array.isArray(ticket)) {
+        return null;
+    }
     
     // Check if all required fields exist and are not null/empty
     for (const field of requiredFields) {
@@ -292,4 +232,3 @@ function normalizeTicket(ticket) {
         status: ticket.status
     };
 }
-

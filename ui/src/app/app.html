@@ -83,9 +83,9 @@
     </div>
   }
 
-  @if (searchPerformed() && tickets().length === 0 && !loading() && !error()) {
+  @if (searchPerformed() && matchStatus() === 'no_good_match' && !loading() && !error()) {
     <div class="no-results">
-      No tickets found for "{{ keyword }}"
+      No strong match among resolved tickets for "{{ keyword }}". Try adding specific product or error details. Results are only shown when at least two meaningful terms match (or one descriptive term is searched).
     </div>
   }
 
@@ -110,15 +110,20 @@
                 <span class="field-label">Status:</span>
                 <span class="ticket-status ticket-value">{{ ticket.status }}</span>
               </div>
-              <div class="ticket-field">
-                @if (ticket.relevance) {
-                  <span class="field-label">Relevance:</span>
-                  <span class="ticket-value ticket-relevance">{{ (ticket.relevance * 100).toFixed(1) }}%</span>
-                }
-              </div>
             </div>            
             
             <h3 class="ticket-subject">{{ ticket.subject }}</h3>
+
+            @if (ticket.matchedWords?.length) {
+              <div class="matched-words">
+                <strong>Why this matched ({{ ticket.matchCount }} terms)</strong>
+                <div class="matched-words-list">
+                  @for (word of ticket.matchedWords; track word) {
+                    <span class="matched-word">{{ word }}</span>
+                  }
+                </div>
+              </div>
+            }
             
             <div class="ticket-section">
               <strong>Description:</strong>
