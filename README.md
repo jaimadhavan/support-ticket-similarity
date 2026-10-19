@@ -102,6 +102,12 @@ The loading process:
 
 ## API Endpoints
 
+### Historical Ticket Availability
+```
+GET /api/tickets/availability
+```
+Returns `{ "count": <number> }`. The UI checks this on startup and after loading or deleting history; search remains disabled until the count is available and greater than zero.
+
 ### Load Tickets
 ```
 POST /api/tickets/loadHistoricalTickets
@@ -113,7 +119,7 @@ The response's `total` is the number of source records, and `skipped` equals `in
 ```
 GET /api/tickets/search?keyword=<keyword>&limit=5
 ```
-Searches resolved tickets by descriptive terms in subject, description, resolution notes, and tags. The `limit` is optional and capped at 50. Results include `matchedWords` and `matchCount`; `matchStatus` is `good_match` or `no_good_match`. A result is shown when at least two distinct meaningful terms match, or when a one-term query matches that term. Search rank is only used for ordering and is not a probability or confidence score.
+Searches resolved tickets by descriptive terms in subject, description, resolution notes, and tags. The `limit` is optional and capped at 50. Results include `matchedWords` and `matchCount`; `matchStatus` is `good_match` or `no_good_match`. A result is shown when at least two distinct meaningful terms match, or when a one-term query matches that term. Queries containing only common/ignored words (for example, `the`) receive a validation message asking for a product, feature, or error term. Search rank is only used for ordering and is not a probability or confidence score.
 
 ### Remove Historical Tickets
 ```
@@ -132,11 +138,14 @@ Deletes all tickets from the database.
 5. If no result meets the rule, the UI explains that there is no strong historical match and suggests adding specific details
 6. Use the "Clear" button to reset the search
 
+Loading and removing historical tickets show their result and counts inline in the UI; no browser alert dialogs are used.
+
 ### Search Features
 
 - **Resolved precedents only**: Unresolved tickets are never suggested as past resolutions.
 - **Explainable matching**: Each result displays the distinct meaningful query terms that matched it.
 - **No-good-match behavior**: Generic words are ignored; multi-term searches need at least two distinct meaningful matches before any candidate is presented. Single descriptive-term searches can still return exact-term matches.
+- **Search validation**: If all entered words are generic terms that are ignored, the UI explains that more specific search terms are needed.
 - **Ranking**: Results are ordered by the number of matched terms, then PostgreSQL full-text rank and recency. The rank is an ordering signal, not calibrated confidence.
 
 ## Example-ticket acceptance checks

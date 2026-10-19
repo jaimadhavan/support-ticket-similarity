@@ -41,6 +41,9 @@ Requirements: Node.js 18+, npm, and PostgreSQL 12+.
 - Seed loader validates records, ignores duplicate ticket IDs, and reports inserted, invalid, duplicate, and failed counts.
 - Search returns resolved tickets only. Multi-term queries require at least two distinct meaningful terms; a single descriptive term can match directly.
 - Results show their matched terms; weak/no matches produce a no-strong-match message.
+- The UI checks the historical ticket count on startup and after management actions; search stays disabled if the table is empty or availability cannot be checked.
+- Queries containing only common words (for example, `the`) show an input-specific prompt to enter product, feature, or error terms; network failures are reported separately.
+- Historical-ticket load and delete results, including counts, are shown inline in the UI rather than in browser alerts.
 - No AI service or external model is required.
 
 ## Checks

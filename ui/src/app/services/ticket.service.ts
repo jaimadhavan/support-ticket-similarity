@@ -13,6 +13,10 @@ export class TicketService {
 
   constructor(private http: HttpClient) {}
 
+  getHistoricalTicketAvailability(): Observable<{ count: number }> {
+    return this.http.get<{ count: number }>(`${this.apiUrl}/availability`);
+  }
+
   loadHistoricalTickets(): Observable<any> {
     return this.http.post(
       `${this.apiUrl}/loadHistoricalTickets`,

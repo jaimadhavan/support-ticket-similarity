@@ -6,6 +6,16 @@ const { getSearchTerms, MIN_MATCHED_TERMS } = require('../search-utils');
 const { createLoadSummary } = require('../load-summary');
 
 module.exports = {
+    getHistoricalTicketAvailability: async function (req, res) {
+        try {
+            const result = await pool.query('SELECT COUNT(*)::int AS count FROM tickets');
+            res.json({ count: result.rows[0].count });
+        } catch (error) {
+            console.error('Error checking historical tickets:', error);
+            res.status(500).json({ error: 'Failed to check historical tickets' });
+        }
+    },
+
     loadHistoricalTickets: async function (req, res) {
     try {
         const ticketsPath = path.join(__dirname, '..', '..', 'starter_kit', 'data', 'tickets.json');
@@ -117,7 +127,7 @@ searchTicketByKeyword: async function(req, res) {
         const words = getSearchTerms(keyword);
         if (words.length === 0) {
             return res.status(400).json({
-                error: 'Please enter at least one descriptive search term'
+                error: 'Your search only contains common words that are ignored. Add specific terms such as a product, feature, or error message.'
             });
         }
 

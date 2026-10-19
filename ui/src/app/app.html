@@ -4,6 +4,21 @@
     <p>Find similar resolved tickets by keyword search</p>
   </header>
 
+  @if (availabilityLoading()) {
+    <div class="availability-message" role="status">
+      Checking historical ticket availability...
+    </div>
+  } @else if (availabilityError()) {
+    <div class="error-message" role="alert">
+      {{ availabilityError() }}
+      <button class="btn btn-secondary" (click)="refreshHistoricalTicketAvailability()">Retry</button>
+    </div>
+  } @else if (historicalTicketCount() === 0) {
+    <div class="availability-message" role="status">
+      No historical tickets are available yet. Load historical tickets to enable search.
+    </div>
+  }
+
   <div class="search-section">
     <div class="search-box">
       <input
@@ -25,7 +40,7 @@
       </select>
       <button
         (click)="searchTickets()"
-        [disabled]="loading()"
+        [disabled]="loading() || removing() || availabilityLoading() || availabilityError() !== '' || (historicalTicketCount() ?? 0) === 0"
         class="btn btn-primary"
       >
         @if (loading()) {
@@ -58,7 +73,7 @@
       <div class="load-section">
     <button
       (click)="removeTickets()"
-      [disabled]="loading()"
+    [disabled]="loading() || removing()"
       class="btn btn-remove"
       title="Remove Historical Tickets"
     >
@@ -66,7 +81,7 @@
     </button>
      <button
       (click)="loadTickets()"
-      [disabled]="loading()"
+      [disabled]="loading() || removing()"
       class="btn btn-load"
       title="Load tickets from JSON file into database"
     >
@@ -80,6 +95,12 @@
   @if (error()) {
     <div class="error-message">
       {{ error() }}
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="success-message" role="status">
+      {{ successMessage() }}
     </div>
   }
 
