@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -30,7 +30,7 @@ interface Ticket {
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
-export class App implements OnInit {
+export class App implements OnDestroy, OnInit {
   userRole = signal<UserRole>('Support Agent');
   activePage = signal<AppPage>('search');
   keyword = '';
@@ -48,11 +48,13 @@ export class App implements OnInit {
   searchPerformed = signal(false);
   matchStatus = signal<'good_match' | 'no_good_match' | null>(null);
   copiedTicketId = '';
+  private feedbackTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(private ticketService: TicketService) {}
 
   changeUserRole(role: UserRole) {
     this.userRole.set(role);
+    this.clearHistoricalFeedback();
     if (role === 'Support Agent') {
       this.activePage.set('search');
       this.removeConfirmationOpen.set(false);
@@ -64,7 +66,7 @@ export class App implements OnInit {
       return;
     }
     if (page !== this.activePage()) {
-      this.successMessage.set('');
+      this.clearHistoricalFeedback();
     }
     this.activePage.set(page);
     if (page === 'search' || page === 'historical') {
@@ -74,6 +76,41 @@ export class App implements OnInit {
 
   ngOnInit() {
     this.refreshHistoricalTicketAvailability();
+  }
+
+  ngOnDestroy() {
+    this.clearFeedbackTimer();
+  }
+
+  dismissFeedback() {
+    this.clearFeedback();
+  }
+
+  private clearFeedbackTimer() {
+    if (this.feedbackTimer !== null) {
+      clearTimeout(this.feedbackTimer);
+      this.feedbackTimer = null;
+    }
+  }
+
+  private clearFeedback() {
+    this.clearFeedbackTimer();
+    this.error.set('');
+    this.successMessage.set('');
+  }
+
+  private showFeedback(type: 'error' | 'success', message: string) {
+    this.clearFeedback();
+    if (type === 'error') {
+      this.error.set(message);
+    } else {
+      this.successMessage.set(message);
+    }
+    this.feedbackTimer = setTimeout(() => this.clearFeedback(), 5000);
+  }
+
+  private clearHistoricalFeedback() {
+    this.clearFeedback();
   }
 
   refreshHistoricalTicketAvailability() {
@@ -106,13 +143,12 @@ export class App implements OnInit {
     }
 
     if (!this.keyword.trim()) {
-      this.error.set('Please enter a keyword to search');
+      this.showFeedback('error', 'Please enter a keyword to search');
       return;
     }
 
     this.loading.set(true);
-    this.error.set('');
-    this.successMessage.set('');
+    this.clearFeedback();
     this.searchPerformed.set(true);
     this.matchStatus.set(null);
 
@@ -124,7 +160,7 @@ export class App implements OnInit {
       },
       error: (error: unknown) => {
         console.error('Search error:', error);
-        this.error.set(this.getSearchErrorMessage(error));
+        this.showFeedback('error', this.getSearchErrorMessage(error));
         this.loading.set(false);
         this.tickets.set([]);
         this.matchStatus.set(null);
@@ -137,7 +173,7 @@ export class App implements OnInit {
     this.searchPerformed.set(false);
     this.matchStatus.set(null);
     this.tickets.set([]);
-    this.error.set('');
+    this.clearFeedback();
   }
 
   private getSearchErrorMessage(error: unknown): string {
@@ -155,8 +191,7 @@ export class App implements OnInit {
 
   loadTickets() {
     this.loading.set(true);
-    this.error.set('');
-    this.successMessage.set('');
+    this.clearHistoricalFeedback();
 
     this.ticketService.loadHistoricalTickets().subscribe({
       next: (response: {
@@ -170,14 +205,14 @@ export class App implements OnInit {
       }) => {
         this.loading.set(false);
         this.clearSearch();
-        this.successMessage.set(
+        this.showFeedback('success',
           `${response.message}. Total: ${response.total}; inserted: ${response.inserted}; skipped: ${response.skipped} (invalid: ${response.invalid}, duplicates: ${response.duplicates}, failed: ${response.failed}).`
         );
         this.refreshHistoricalTicketAvailability();
       },
       error: (error: unknown) => {
         console.error('Load error:', error);
-        this.error.set('Failed to load tickets. Please check the backend connection and try again.');
+        this.showFeedback('error', 'Failed to load tickets. Please check the backend connection and try again.');
         this.loading.set(false);
       }
     });
@@ -186,20 +221,19 @@ export class App implements OnInit {
 
   removeTickets() {
     this.removing.set(true);
-    this.error.set('');
-    this.successMessage.set('');
+    this.clearHistoricalFeedback();
     this.removeConfirmationOpen.set(false);
 
     this.ticketService.removeHistoricalTickets().subscribe({
       next: (response: { message: string; total: number }) => {
         this.removing.set(false);
         this.clearSearch();
-        this.successMessage.set(`${response.message} (${response.total} tickets removed).`);
+        this.showFeedback('success', `${response.message} (${response.total} tickets removed).`);
         this.refreshHistoricalTicketAvailability();
       },
       error: (error: unknown) => {
         console.error('Remove tickets error:', error);
-        this.error.set('Failed to remove historical tickets. Please check the backend connection and try again.');
+        this.showFeedback('error', 'Failed to remove historical tickets. Please check the backend connection and try again.');
         this.removing.set(false);
       }
     });
@@ -209,8 +243,7 @@ export class App implements OnInit {
     if (this.availabilityLoading() || this.availabilityError() || (this.historicalTicketCount() ?? 0) === 0) {
       return;
     }
-    this.error.set('');
-    this.successMessage.set('');
+    this.clearHistoricalFeedback();
     this.removeConfirmationOpen.set(true);
   }
 
@@ -231,6 +264,7 @@ export class App implements OnInit {
   }
 
   clearSearch() {
+    this.clearFeedbackTimer();
     this.keyword = '';
     this.tickets.set([]);
     this.searchPerformed.set(false);

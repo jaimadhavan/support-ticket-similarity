@@ -5,13 +5,16 @@
 }
 
 .admin-page {
+  display: flex;
   width: 100%;
+  height: auto;
+  flex: 1 1 auto;
   min-width: 0;
   min-height: 0;
+  flex-direction: column;
   margin-top: 0.25rem;
-  height: 100%;
-  overflow: auto;
-  padding: 0.5rem;
+  overflow: hidden;
+  padding: 0.35rem;
   border: 1px solid #e5e7eb;
   border-radius: 4px;
   background: #f9fafb;
@@ -19,15 +22,29 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
+.admin-content {
+  display: flex;
+  flex: 1 1 auto;
+  height: 0;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  gap: 0.2rem;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  padding-right: 0.25rem;
+}
+
 .page-heading {
-  margin-bottom: 0.75rem;
+  flex: 0 0 auto;
+  margin-bottom: 0.45rem;
   text-align: left;
 }
 
 .page-heading h2,
 .ticket-form h3,
 .list-heading {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
   color: #333;
 }
 
@@ -45,40 +62,92 @@
 .admin-form {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.4rem;
   min-width: 0;
   margin-bottom: 1rem;
-  padding: 0.6rem;
+  padding: 0.4rem;
   border: 1px solid #e5e7eb;
   border-radius: 4px;
   background: #f9fafb;
 }
 
-.admin-form-accordion {
+.admin-tabs {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.25rem;
   min-width: 0;
-  margin-bottom: 1rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 4px;
-  background: #f9fafb;
+  overflow-x: auto;
+  border-bottom: 1px solid #cbd5e1;
 }
 
-.admin-form-accordion > summary {
-  padding: 0.65rem 0.75rem;
-  color: #374151;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  list-style-position: inside;
-}
-
-.admin-form-accordion[open] > summary {
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.admin-form-accordion > .admin-form {
-  margin: 0;
+.admin-tabs > [role='tab'] {
+  position: relative;
+  flex: 0 0 auto;
+  padding: 0.55rem 0.8rem;
   border: 0;
+  border-bottom: 3px solid transparent;
   background: transparent;
+  color: #475569;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.admin-tabs > [role='tab'][aria-selected='true'] {
+  border-bottom-color: #0f766e;
+  color: #0f4c5c;
+}
+
+.admin-tabs > [role='tab']:focus-visible {
+  outline: 2px solid #0e7490;
+  outline-offset: -2px;
+}
+
+.admin-tab-panel {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+}
+
+.form-tab-panel {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.list-tab-panel {
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.admin-form {
+  flex: 0 0 auto;
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.admin-list-scroll-area {
+  flex: 1 1 0;
+  height: 0;
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.35rem;
+}
+
+.list-tab-panel > .admin-list-scroll-area {
+  flex: 1 1 0;
+  height: 0;
+  min-height: 0;
+}
+
+.admin-list-scroll-area > p[role='status'],
+.admin-list-scroll-area > p:not([role]) {
+  margin: 0.5rem;
 }
 
 .admin-form label {
@@ -132,7 +201,7 @@
 .category-form {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.4rem;
 }
 
 .form-grid {
@@ -218,16 +287,16 @@
 .admin-list {
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.3rem;
 }
 
 .admin-list-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.35rem;
   min-width: 0;
-  padding: 0.85rem;
+  padding: 0.45rem;
   border: 1px solid #d1d5db;
   border-radius: 4px;
   background: #fff;
@@ -356,15 +425,23 @@
 .ticket-pagination {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  flex: 0 0 auto;
   gap: 0.6rem;
-  margin-top: 0.75rem;
   color: #6b7280;
   font-size: 0.875rem;
+  padding: 0.3rem 0.55rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.ticket-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
 }
 
 .list-heading {
-  margin: 0.85rem 0 0.5rem;
+  margin: 0.4rem 0 0.25rem;
   font-size: 1.5rem;
 }
 
@@ -388,6 +465,13 @@
   border: 1px solid #a7f3d0;
   background: #ecfdf5;
   color: #065f46;
+}
+
+.admin-page .dismissible-message {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 
 .admin-page p[role='status'] {
@@ -441,6 +525,11 @@
     flex-wrap: wrap;
   }
 
+  .ticket-pagination-controls {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
   .category-form .form-actions,
   .ticket-form .form-actions {
     width: 100%;
@@ -454,7 +543,7 @@
 
 @media (max-width: 480px) {
   .admin-page {
-    padding: 0.35rem;
+    padding: 0.25rem;
   }
 
   .form-grid {

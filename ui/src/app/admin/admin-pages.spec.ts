@@ -51,9 +51,13 @@ describe('Admin management pages', () => {
 
     expect(service.deactivateCategory).toHaveBeenCalledWith(1);
     expect(fixture.componentInstance.message()).toContain('Existing tickets keep this category');
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('.message-dismiss') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.success-message')).toBeNull();
   });
 
-  it('loads a category name into the editable field', async () => {
+  it('keeps the category heading fixed while loading a name into the editable field', async () => {
     service.getCategories.mockReturnValue(of({
       categories: [{ id: 9, name: 'reporting', is_active: true }]
     }));
@@ -67,24 +71,44 @@ describe('Admin management pages', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    const buttons = fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>;
-    const editButton = Array.from(buttons)
-      .find(button => button.textContent?.trim() === 'Edit') as HTMLButtonElement;
-    const page = fixture.nativeElement.querySelector('.admin-page') as HTMLElement;
-    const accordion = fixture.nativeElement.querySelector('.admin-form-accordion') as HTMLDetailsElement;
-    const input = fixture.nativeElement.querySelector('#category-name') as HTMLInputElement;
-    expect(accordion.open).toBe(false);
+    const page = fixture.nativeElement.querySelector('.admin-list-scroll-area') as HTMLElement;
+    const heading = fixture.nativeElement.querySelector('.page-heading') as HTMLElement;
+    const formTab = fixture.nativeElement.querySelector('#category-form-tab') as HTMLButtonElement;
+    const listTab = fixture.nativeElement.querySelector('#category-list-tab') as HTMLButtonElement;
+    expect(heading.parentElement).toBe(fixture.nativeElement.querySelector('.admin-page'));
+    expect(page.contains(heading)).toBe(false);
+    expect(formTab.getAttribute('aria-selected')).toBe('false');
+    expect(listTab.getAttribute('aria-selected')).toBe('true');
+    expect(fixture.nativeElement.querySelector('#category-form-panel')).toBeNull();
+    expect(fixture.nativeElement.querySelector('#category-list-panel')).not.toBeNull();
+    expect(getComputedStyle(page).overflowY).toBe('auto');
+    expect(getComputedStyle(page).flexGrow).toBe('1');
     expect(fixture.nativeElement.textContent).toContain('Add Category');
-    page.scrollTop = 250;
+    formTab.click();
+    fixture.detectChanges();
+    expect(formTab.getAttribute('aria-selected')).toBe('true');
+    expect(listTab.getAttribute('aria-selected')).toBe('false');
+    expect(fixture.nativeElement.querySelector('#category-form-panel')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('#category-list-panel')).toBeNull();
+    listTab.click();
+    fixture.detectChanges();
+    expect(formTab.getAttribute('aria-selected')).toBe('false');
+    expect(listTab.getAttribute('aria-selected')).toBe('true');
+    const activeList = fixture.nativeElement.querySelector('.admin-list-scroll-area') as HTMLElement;
+    const editButton = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>)
+      .find(button => button.textContent?.trim() === 'Edit') as HTMLButtonElement;
+    activeList.scrollTop = 250;
     editButton.click();
     await fixture.whenStable();
     fixture.detectChanges();
 
+    const input = fixture.nativeElement.querySelector('#category-name') as HTMLInputElement;
     expect(input.value).toBe('reporting');
     expect(fixture.componentInstance.categoryName).toBe('reporting');
-    expect(page.scrollTop).toBe(0);
+    expect(activeList.scrollTop).toBe(0);
     expect(document.activeElement).toBe(input);
-    expect(accordion.open).toBe(true);
+    expect(formTab.getAttribute('aria-selected')).toBe('true');
+    expect(listTab.getAttribute('aria-selected')).toBe('false');
     expect(fixture.nativeElement.textContent).toContain('Edit Category');
     expect(fixture.nativeElement.textContent).toContain('Save Category');
 
@@ -92,11 +116,12 @@ describe('Admin management pages', () => {
       .find(button => button.textContent?.trim() === 'Cancel Edit') as HTMLButtonElement;
     cancelButton.click();
     fixture.detectChanges();
-    expect(accordion.open).toBe(false);
+    expect(formTab.getAttribute('aria-selected')).toBe('false');
+    expect(listTab.getAttribute('aria-selected')).toBe('true');
     expect(fixture.nativeElement.textContent).toContain('Add Category');
   });
 
-  it('collapses the category accordion and returns to Add Category after saving an edit', async () => {
+  it('returns to the Category List tab after saving an edit', async () => {
     service.getCategories.mockReturnValue(of({
       categories: [{ id: 9, name: 'reporting', is_active: true }]
     }));
@@ -109,22 +134,21 @@ describe('Admin management pages', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
-    const accordion = fixture.nativeElement.querySelector('.admin-form-accordion') as HTMLDetailsElement;
     const category = fixture.componentInstance.categories()[0];
 
-    fixture.componentInstance.editCategory(category, undefined, accordion);
+    fixture.componentInstance.editCategory(category);
     fixture.detectChanges();
     fixture.componentInstance.categoryName = 'reports';
-    fixture.componentInstance.saveCategory(accordion);
+    fixture.componentInstance.saveCategory();
     fixture.detectChanges();
 
     expect(service.updateCategory).toHaveBeenCalledWith(9, 'reports');
-    expect(accordion.open).toBe(false);
+    expect(fixture.componentInstance.activeTab).toBe('list');
     expect(fixture.nativeElement.textContent).toContain('Add Category');
     expect(fixture.componentInstance.editingId).toBeNull();
   });
 
-  it('renders the ticket form collapsed and expands it for adding', async () => {
+  it('renders the Ticket List tab by default and switches to the Add Ticket tab', async () => {
     await TestBed.configureTestingModule({
       imports: [TicketsPageComponent],
       providers: [{ provide: TicketService, useValue: service }]
@@ -134,13 +158,30 @@ describe('Admin management pages', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
-    const accordion = fixture.nativeElement.querySelector('.admin-form-accordion') as HTMLDetailsElement;
-    expect(accordion.open).toBe(false);
+    const formTab = fixture.nativeElement.querySelector('#ticket-form-tab') as HTMLButtonElement;
+    const listTab = fixture.nativeElement.querySelector('#ticket-list-tab') as HTMLButtonElement;
+    expect(formTab.getAttribute('aria-selected')).toBe('false');
+    expect(listTab.getAttribute('aria-selected')).toBe('true');
+    expect(fixture.nativeElement.querySelector('#ticket-form-panel')).toBeNull();
+    expect(fixture.nativeElement.querySelector('#ticket-list-panel')).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Add Ticket');
 
-    (fixture.nativeElement.querySelector('.admin-form-accordion > summary') as HTMLElement).click();
+    formTab.click();
     fixture.detectChanges();
-    expect(accordion.open).toBe(true);
+    expect(formTab.getAttribute('aria-selected')).toBe('true');
+    expect(listTab.getAttribute('aria-selected')).toBe('false');
+    expect(fixture.nativeElement.querySelector('#ticket-form-panel')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('#ticket-list-panel')).toBeNull();
+
+    listTab.click();
+    fixture.detectChanges();
+    expect(formTab.getAttribute('aria-selected')).toBe('false');
+    expect(listTab.getAttribute('aria-selected')).toBe('true');
+
+    listTab.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+    fixture.detectChanges();
+    expect(formTab.getAttribute('aria-selected')).toBe('true');
+    expect(document.activeElement).toBe(formTab);
   });
 
   it('adds a ticket with its selected category and status', async () => {
@@ -155,6 +196,8 @@ describe('Admin management pages', () => {
     const fixture = TestBed.createComponent(TicketsPageComponent);
     fixture.detectChanges();
     await fixture.whenStable();
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('#ticket-form-tab') as HTMLButtonElement).click();
     fixture.detectChanges();
     expect(fixture.componentInstance.categoryOptions).toEqual([
       { id: 7, name: 'billing', is_active: true }
@@ -187,6 +230,9 @@ describe('Admin management pages', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[role="status"].success-message')?.textContent)
       .toContain('Ticket added successfully.');
+    (fixture.nativeElement.querySelector('.message-dismiss') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.success-message')).toBeNull();
   });
 
   it('shows a success message after editing a ticket', async () => {
@@ -213,14 +259,15 @@ describe('Admin management pages', () => {
     const fixture = TestBed.createComponent(TicketsPageComponent);
     fixture.detectChanges();
     await fixture.whenStable();
-    const accordion = fixture.nativeElement.querySelector('.admin-form-accordion') as HTMLDetailsElement;
-    const page = fixture.nativeElement.querySelector('.admin-page') as HTMLElement;
-    const ticketIdInput = fixture.nativeElement.querySelector('input[name="ticketId"]') as HTMLInputElement;
-    expect(accordion.open).toBe(false);
-    fixture.componentInstance.editTicket(existingTicket, page, accordion, ticketIdInput);
+    const page = fixture.nativeElement.querySelector('.admin-list-scroll-area') as HTMLElement;
+    const heading = fixture.nativeElement.querySelector('.page-heading') as HTMLElement;
+    expect(heading.parentElement).toBe(fixture.nativeElement.querySelector('.admin-page'));
+    expect(page.contains(heading)).toBe(false);
+    expect(fixture.componentInstance.activeTab).toBe('list');
+    fixture.componentInstance.editTicket(existingTicket, page);
     fixture.componentInstance.form.subject = 'Updated invoice issue';
 
-    fixture.componentInstance.saveTicket(accordion);
+    fixture.componentInstance.saveTicket();
     fixture.detectChanges();
 
     expect(service.updateManagedTicket).toHaveBeenCalledWith('T-8', expect.objectContaining({
@@ -228,12 +275,12 @@ describe('Admin management pages', () => {
     }));
     expect(fixture.nativeElement.querySelector('[role="status"].success-message')?.textContent)
       .toContain('Ticket updated successfully.');
-    expect(accordion.open).toBe(false);
+    expect(fixture.componentInstance.activeTab).toBe('list');
     expect(fixture.nativeElement.textContent).toContain('Add Ticket');
     expect(fixture.componentInstance.editingTicketId).toBeNull();
   });
 
-  it('returns the ticket accordion to collapsed Add Ticket mode when edit is cancelled', async () => {
+  it('returns to the Ticket List tab when edit is cancelled', async () => {
     const existingTicket = {
       ticket_id: 'T-9',
       category_id: 7,
@@ -258,20 +305,19 @@ describe('Admin management pages', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
-    const accordion = fixture.nativeElement.querySelector('.admin-form-accordion') as HTMLDetailsElement;
-    fixture.componentInstance.editTicket(existingTicket, undefined, accordion);
+    fixture.componentInstance.editTicket(existingTicket);
     fixture.detectChanges();
 
-    fixture.componentInstance.cancelEdit(accordion);
+    fixture.componentInstance.cancelEdit();
     fixture.detectChanges();
 
-    expect(accordion.open).toBe(false);
+    expect(fixture.componentInstance.activeTab).toBe('list');
     expect(fixture.nativeElement.textContent).toContain('Add Ticket');
     expect(fixture.componentInstance.editingTicketId).toBeNull();
     expect(fixture.componentInstance.form.ticket_id).toBe('');
   });
 
-  it('retains an inactive category when editing a ticket already assigned to it', async () => {
+  it('keeps the ticket heading fixed and retains an inactive category while editing', async () => {
     service.getCategories.mockReturnValue(of({
       categories: [{ id: 1, name: 'billing', is_active: false }]
     }));
@@ -296,19 +342,18 @@ describe('Admin management pages', () => {
     const fixture = TestBed.createComponent(TicketsPageComponent);
     fixture.detectChanges();
     await fixture.whenStable();
-    const accordion = fixture.nativeElement.querySelector('.admin-form-accordion') as HTMLDetailsElement;
-    const page = fixture.nativeElement.querySelector('.admin-page') as HTMLElement;
-    const ticketIdInput = fixture.nativeElement.querySelector('input[name="ticketId"]') as HTMLInputElement;
+    const page = fixture.nativeElement.querySelector('.admin-list-scroll-area') as HTMLElement;
     page.scrollTop = 250;
-    fixture.componentInstance.editTicket(fixture.componentInstance.tickets()[0], page, accordion, ticketIdInput);
+    fixture.componentInstance.editTicket(fixture.componentInstance.tickets()[0], page);
     fixture.detectChanges();
 
+    const ticketIdInput = fixture.nativeElement.querySelector('input[name="ticketId"]') as HTMLInputElement;
     expect(fixture.componentInstance.categoryOptions).toEqual([
       { id: 1, name: 'billing', is_active: false }
     ]);
     expect(page.scrollTop).toBe(0);
     expect(document.activeElement).toBe(ticketIdInput);
-    expect(accordion.open).toBe(true);
+    expect(fixture.componentInstance.activeTab).toBe('form');
     expect(fixture.nativeElement.textContent).toContain('Edit Ticket');
     expect(fixture.nativeElement.textContent).toContain('In Progress');
     expect(fixture.nativeElement.textContent).toContain('Resolved');
@@ -341,6 +386,21 @@ describe('Admin management pages', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelectorAll('.ticket-list-row').length).toBe(10);
+    const pagination = fixture.nativeElement.querySelector('.ticket-pagination') as HTMLElement;
+    const listPanel = fixture.nativeElement.querySelector('#ticket-list-panel') as HTMLElement;
+    const scrollableContent = fixture.nativeElement.querySelector('.admin-list-scroll-area') as HTMLElement;
+    expect(pagination.parentElement).toBe(listPanel);
+    expect(fixture.componentInstance.activeTab).toBe('list');
+    expect(scrollableContent.contains(pagination)).toBe(false);
+    expect(pagination.querySelector('.page-size-control')).toBeTruthy();
+    expect(pagination.firstElementChild?.classList.contains('page-size-control')).toBe(true);
+    expect(pagination.querySelector('.ticket-pagination-controls')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.admin-list-toolbar')).toBeNull();
+    expect(getComputedStyle(scrollableContent).overflowY).toBe('auto');
+    expect(getComputedStyle(scrollableContent).minHeight).toBe('0px');
+    expect(getComputedStyle(listPanel).display).toBe('flex');
+    expect(getComputedStyle(listPanel).flexGrow).toBe('1');
+    expect(getComputedStyle(scrollableContent).flexGrow).toBe('1');
     fixture.componentInstance.changePage(2);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelectorAll('.ticket-list-row').length).toBe(10);

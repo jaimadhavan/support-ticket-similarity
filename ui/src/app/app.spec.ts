@@ -29,11 +29,18 @@ describe('App', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should render title', async () => {
+  it('should render the enterprise application header and workspace role selector', async () => {
     const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
     await fixture.whenStable();
+    fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Support Ticket Similarity Search');
+    const header = compiled.querySelector('.application-header');
+    expect(header?.querySelector('h1')?.textContent).toContain('Support Ticket Management');
+    expect(header?.textContent).toContain('Support Operations');
+    expect(header?.textContent).toContain('Find trusted resolutions');
+    expect(header?.querySelector('.brand-mark[aria-hidden="true"] svg')).toBeTruthy();
+    expect(header?.querySelector('[aria-label="User role"]')).toBeTruthy();
   });
 
   it('should default to Support Agent and hide admin navigation', async () => {
@@ -96,6 +103,34 @@ describe('App', () => {
     expect(searchButton.disabled).toBe(false);
   });
 
+  it('keeps the results heading outside the independently scrollable results list', async () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.componentInstance.tickets.set([{
+      ticket_id: 'T-1',
+      category: 'billing',
+      subject: 'Invoice mismatch',
+      description: 'Invoice amount differs',
+      resolution_notes: 'Corrected invoice total',
+      tags: [],
+      created_at: '2025-01-15',
+      status: 'resolved'
+    }]);
+    fixture.componentInstance.keyword = 'invoice';
+    fixture.detectChanges();
+
+    const results = fixture.nativeElement.querySelector('.results-section') as HTMLElement;
+    const heading = results.querySelector('h2');
+    const list = results.querySelector('.tickets-list') as HTMLElement;
+
+    expect(heading?.textContent).toContain('Results for "invoice"');
+    expect(heading?.parentElement).toBe(results);
+    expect(list.getAttribute('role')).toBe('region');
+    expect(list.getAttribute('aria-label')).toBe('Search results');
+    expect(list.querySelector('.ticket-card')).toBeTruthy();
+  });
+
   it('should explain that a stop-word-only search needs more specific terms', async () => {
     const validationMessage =
       'Your search only contains common words that are ignored. Add specific terms such as a product, feature, or error message.';
@@ -120,6 +155,9 @@ describe('App', () => {
 
     expect(fixture.nativeElement.textContent).toContain(validationMessage);
     expect(fixture.nativeElement.textContent).not.toContain('Please ensure the backend server is running');
+    (fixture.nativeElement.querySelector('.dismissible-message .message-dismiss') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.dismissible-message')).toBeNull();
   });
 
   it('should hide a no-match message while the user edits the search and show it after searching again', async () => {
@@ -185,10 +223,60 @@ describe('App', () => {
     expect(fixture.nativeElement.textContent).toContain('Total: 3; inserted: 2; skipped: 1');
     expect(fixture.nativeElement.querySelector('[role="status"].success-message')).toBeTruthy();
 
+    const dismissButton = fixture.nativeElement.querySelector('.historical-message .message-dismiss') as HTMLButtonElement;
+    dismissButton.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.success-message')).toBeNull();
+
+    fixture.componentInstance.loadTickets();
+    fixture.detectChanges();
     fixture.componentInstance.navigateTo('search');
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).not.toContain('Tickets loaded successfully');
     expect(fixture.nativeElement.querySelector('.success-message')).toBeNull();
+  });
+
+  it('automatically dismisses historical operation feedback after five seconds', async () => {
+    TestBed.overrideProvider(TicketService, {
+      useValue: {
+        getHistoricalTicketAvailability: () => of({ count: 2, resolvedCount: 2 }),
+        searchTickets: () => of({ tickets: [], matchStatus: 'no_good_match' }),
+        loadHistoricalTickets: () => of({
+          message: 'Tickets loaded successfully',
+          total: 2,
+          inserted: 2,
+          skipped: 0,
+          invalid: 0,
+          duplicates: 0,
+          failed: 0
+        }),
+        removeHistoricalTickets: () => of({})
+      }
+    });
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.componentInstance.changeUserRole('Admin');
+    fixture.componentInstance.navigateTo('historical');
+    fixture.detectChanges();
+
+    vi.useFakeTimers();
+    try {
+      fixture.componentInstance.loadTickets();
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.success-message')).toBeTruthy();
+
+      vi.advanceTimersByTime(4999);
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.success-message')).toBeTruthy();
+
+      vi.advanceTimersByTime(1);
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.success-message')).toBeNull();
+    } finally {
+      vi.useRealTimers();
+      fixture.destroy();
+    }
   });
 
   it('should ask for confirmation before deleting historical tickets', async () => {
@@ -247,6 +335,7 @@ describe('App', () => {
     expect(loadButton.disabled).toBe(false);
     expect(removeButton).toBeTruthy();
     expect(removeButton.disabled).toBe(true);
+    expect(getComputedStyle(removeButton).backgroundColor).toBe('rgb(220, 38, 38)');
     expect(fixture.nativeElement.textContent).toContain('No historical tickets yet');
   });
 

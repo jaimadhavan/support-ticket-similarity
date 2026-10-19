@@ -11,6 +11,14 @@ This document captures the current visual language of the Ticket Similarity Sear
 
 ## Layout and typography
 
+### Application header
+
+- Use a full-width, deep-navy brand panel (`#102b49` to `#1a4567`) with a subtle border and shadow. Keep it visually distinct from the white content surface without competing with search.
+- Arrange the brand lockup on the left: a compact teal-accented ticket icon, uppercase `Support Operations` eyebrow, clear application title, and one-line supporting message.
+- Place the workspace-role selector on the right in a translucent panel. Keep the native select light with dark text for contrast and familiar operation.
+- At tablet widths reduce padding and title/icon size. At phone widths stack the role selector beneath the brand and allow the title to wrap.
+- Keep the title and role selector semantic and keyboard accessible; mark the decorative icon hidden from assistive technology and preserve a visible focus indicator on the select.
+
 | Element | Specification |
 |---|---|
 | Page container | Centered; maximum width `1200px`; `0.75rem` outer padding (`0.5rem` at mobile); viewport-height vertical flex layout |
@@ -22,7 +30,7 @@ This document captures the current visual language of the Ticket Similarity Sear
 | Body copy | `#666`, line-height `1.6` |
 | Compact labels and metadata | `0.875rem`; labels use weight `600` and `#6b7280` |
 
-The page header is centered with a compact `1rem` bottom margin. Controls and results are vertically stacked. Results form a single-column list with about `0.65rem` between cards. The search controls are a horizontal flex row with compact gaps; on viewports at or below `768px`, the controls stack vertically.
+The application header is separated from the navigation by visible vertical space. The browser viewport remains fixed without document scrolling. Controls and results are vertically stacked; the results heading stays fixed above a keyboard-accessible, independently scrollable, single-column ticket list with about `0.65rem` between cards. The search controls are a horizontal flex row with compact gaps; on viewports at or below `768px`, the controls stack vertically.
 
 ## Color and shape
 

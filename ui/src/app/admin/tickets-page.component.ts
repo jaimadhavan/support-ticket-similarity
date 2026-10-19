@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Category, ManagedTicket, TicketService, TicketStatus } from '../services/ticket.service';
@@ -9,6 +9,8 @@ type TicketForm = Omit<ManagedTicket, 'tags' | 'status' | 'category' | 'category
   status: TicketStatus;
 };
 
+type AdminTab = 'form' | 'list';
+
 @Component({
   selector: 'app-tickets-page',
   standalone: true,
@@ -16,7 +18,7 @@ type TicketForm = Omit<ManagedTicket, 'tags' | 'status' | 'category' | 'category
   templateUrl: './tickets-page.component.html',
   styleUrl: './admin-pages.component.css'
 })
-export class TicketsPageComponent implements OnInit {
+export class TicketsPageComponent implements OnDestroy, OnInit {
   tickets = signal<ManagedTicket[]>([]);
   categories = signal<Category[]>([]);
   loading = signal(false);
@@ -28,11 +30,53 @@ export class TicketsPageComponent implements OnInit {
   currentPage = signal(1);
   pageSize = signal(10);
   form: TicketForm = createEmptyForm();
+  activeTab: AdminTab = 'list';
+  private focusTicketIdOnRender = false;
+  private feedbackTimer: ReturnType<typeof setTimeout> | null = null;
+
+  @ViewChild('ticketIdInput')
+  set ticketIdInput(input: ElementRef<HTMLInputElement> | undefined) {
+    if (input && this.focusTicketIdOnRender) {
+      this.focusTicketIdOnRender = false;
+      input.nativeElement.focus();
+    }
+  }
 
   constructor(private ticketService: TicketService) {}
 
   ngOnInit() {
     this.refreshData();
+  }
+
+  ngOnDestroy() {
+    this.clearFeedbackTimer();
+  }
+
+  dismissFeedback() {
+    this.clearFeedback();
+  }
+
+  private clearFeedbackTimer() {
+    if (this.feedbackTimer !== null) {
+      clearTimeout(this.feedbackTimer);
+      this.feedbackTimer = null;
+    }
+  }
+
+  private clearFeedback() {
+    this.clearFeedbackTimer();
+    this.error.set('');
+    this.message.set('');
+  }
+
+  private showFeedback(type: 'error' | 'success', text: string) {
+    this.clearFeedback();
+    if (type === 'error') {
+      this.error.set(text);
+    } else {
+      this.message.set(text);
+    }
+    this.feedbackTimer = setTimeout(() => this.clearFeedback(), 5000);
   }
 
   refreshData() {
@@ -53,7 +97,7 @@ export class TicketsPageComponent implements OnInit {
       },
       error: error => {
         console.error('Ticket list error:', error);
-        this.error.set(error.error?.error || 'Unable to load tickets.');
+        this.showFeedback('error', error.error?.error || 'Unable to load tickets.');
         complete();
       }
     });
@@ -64,7 +108,7 @@ export class TicketsPageComponent implements OnInit {
       },
       error: error => {
         console.error('Category options error:', error);
-        this.error.set(error.error?.error || 'Unable to load ticket categories.');
+        this.showFeedback('error', error.error?.error || 'Unable to load ticket categories.');
         complete();
       }
     });
@@ -92,6 +136,28 @@ export class TicketsPageComponent implements OnInit {
     this.expandedTicketId.set(this.expandedTicketId() === ticketId ? null : ticketId);
   }
 
+  selectTab(tab: AdminTab) {
+    this.activeTab = tab;
+  }
+
+  onTabKeydown(event: KeyboardEvent) {
+    let nextTab: AdminTab;
+    if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+      nextTab = this.activeTab === 'form' ? 'list' : 'form';
+    } else if (event.key === 'End') {
+      nextTab = 'list';
+    } else if (event.key === 'Home') {
+      nextTab = 'form';
+    } else {
+      return;
+    }
+    event.preventDefault();
+    this.activeTab = nextTab;
+    const nextButton = (event.currentTarget as HTMLElement).parentElement
+      ?.querySelector<HTMLButtonElement>(`[data-admin-tab="${nextTab}"]`);
+    nextButton?.focus();
+  }
+
   get categoryOptions(): Category[] {
     const active = this.categories().filter(category => category.is_active);
     if (this.editingTicketId) {
@@ -106,21 +172,17 @@ export class TicketsPageComponent implements OnInit {
     return active;
   }
 
-  startAdd(accordion?: HTMLDetailsElement) {
+  startAdd() {
     this.editingTicketId = null;
     this.form = createEmptyForm();
-    this.error.set('');
-    this.message.set('');
-    if (accordion) {
-      accordion.open = false;
-    }
+    this.clearFeedback();
+    this.activeTab = 'list';
   }
 
-  editTicket(ticket: ManagedTicket, page?: HTMLElement, accordion?: HTMLDetailsElement, ticketIdInput?: HTMLInputElement) {
+  editTicket(ticket: ManagedTicket, content?: HTMLElement) {
     this.editingTicketId = ticket.ticket_id;
-    if (accordion) {
-      accordion.open = true;
-    }
+    this.focusTicketIdOnRender = true;
+    this.activeTab = 'form';
     this.form = {
       ticket_id: ticket.ticket_id,
       category_id: ticket.category_id,
@@ -131,25 +193,23 @@ export class TicketsPageComponent implements OnInit {
       created_at: ticket.created_at.slice(0, 10),
       tags: ticket.tags.join(', ')
     };
-    this.error.set('');
-    this.message.set('');
-    if (page) {
-      page.scrollTop = 0;
+    this.clearFeedback();
+    if (content) {
+      content.scrollTop = 0;
     }
-    ticketIdInput?.focus();
   }
 
-  cancelEdit(accordion?: HTMLDetailsElement) {
-    this.startAdd(accordion);
+  cancelEdit() {
+    this.startAdd();
   }
 
-  saveTicket(accordion?: HTMLDetailsElement) {
+  saveTicket() {
     if (this.form.category_id === null) {
-      this.error.set('Select a category before saving the ticket.');
+      this.showFeedback('error', 'Select a category before saving the ticket.');
       return;
     }
     if (this.form.status === 'resolved' && !this.form.resolution_notes.trim()) {
-      this.error.set('Add resolution notes before marking the ticket as resolved.');
+      this.showFeedback('error', 'Add resolution notes before marking the ticket as resolved.');
       return;
     }
 
@@ -164,21 +224,20 @@ export class TicketsPageComponent implements OnInit {
       tags: this.form.tags.split(',').map(tag => tag.trim()).filter(Boolean)
     };
     this.loading.set(true);
-    this.error.set('');
-    this.message.set('');
+    this.clearFeedback();
     const request = this.editingTicketId
       ? this.ticketService.updateManagedTicket(this.editingTicketId, ticket)
       : this.ticketService.addManagedTicket(ticket);
     request.subscribe({
       next: () => {
         const successMessage = this.editingTicketId ? 'Ticket updated successfully.' : 'Ticket added successfully.';
-        this.startAdd(accordion);
-        this.message.set(successMessage);
+        this.startAdd();
+        this.showFeedback('success', successMessage);
         this.refreshData();
       },
       error: error => {
         console.error('Save ticket error:', error);
-        this.error.set(error.error?.error || 'Unable to save ticket.');
+        this.showFeedback('error', error.error?.error || 'Unable to save ticket.');
         this.loading.set(false);
       }
     });
@@ -186,18 +245,17 @@ export class TicketsPageComponent implements OnInit {
 
   deleteTicket(ticket: ManagedTicket) {
     this.loading.set(true);
-    this.error.set('');
-    this.message.set('');
+    this.clearFeedback();
     this.ticketService.deleteManagedTicket(ticket.ticket_id).subscribe({
       next: response => {
-        this.message.set(`${response.message}: ${response.ticket_id}`);
+        this.showFeedback('success', `${response.message}: ${response.ticket_id}`);
         this.confirmingDeleteId = null;
         this.expandedTicketId.set(null);
         this.refreshData();
       },
       error: error => {
         console.error('Delete ticket error:', error);
-        this.error.set(error.error?.error || 'Unable to delete ticket.');
+        this.showFeedback('error', error.error?.error || 'Unable to delete ticket.');
         this.loading.set(false);
       }
     });

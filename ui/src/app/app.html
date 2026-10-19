@@ -1,9 +1,21 @@
 <div class="container">
-  <header>
-    <h1>Support Ticket Management</h1>
-    <p>Manage and search support tickets</p>
+  <header class="application-header">
+    <div class="brand-lockup">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32" focusable="false">
+          <path d="M8 5.5h16a2 2 0 0 1 2 2v17a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-17a2 2 0 0 1 2-2Z" />
+          <path d="M11 11h10M11 16h10M11 21h6" />
+          <path d="M23 5.5v4" />
+        </svg>
+      </span>
+      <div class="brand-copy">
+        <span class="brand-eyebrow">Support Operations</span>
+        <h1>Support Ticket Management</h1>
+        <p>Find trusted resolutions. Support every customer with confidence.</p>
+      </div>
+    </div>
     <label class="role-selector">
-      User role
+      <span class="role-label">Workspace role</span>
       <select aria-label="User role" [ngModel]="userRole()" (ngModelChange)="changeUserRole($event)">
         <option value="Support Agent">Support Agent</option>
         <option value="Admin">Admin</option>
@@ -88,7 +100,14 @@
     </div>
 
     @if (error()) {
-      <div class="error-message" role="alert">{{ error() }}</div>
+      <div class="error-message dismissible-message" role="alert">
+        <span>{{ error() }}</span>
+        <button type="button" class="message-dismiss" aria-label="Dismiss message" (click)="dismissFeedback()">
+          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+            <path d="m4 4 8 8M12 4l-8 8" />
+          </svg>
+        </button>
+      </div>
     }
     @if (searchPerformed() && matchStatus() === 'no_good_match' && !loading() && !error()) {
       <div class="no-results">
@@ -98,7 +117,7 @@
     @if (tickets().length > 0) {
       <div class="results-section">
         <h2>Results for "{{ keyword }}" ({{ tickets().length }} tickets)</h2>
-        <div class="tickets-list">
+        <div class="tickets-list" role="region" aria-label="Search results" tabindex="0">
           @for (ticket of tickets(); track ticket.ticket_id; let i = $index) {
             <div class="ticket-card">
               <div class="ticket-serial">{{ i + 1 }}</div>
@@ -214,10 +233,24 @@
         </div>
       }
       @if (error()) {
-        <div class="error-message historical-message" role="alert">{{ error() }}</div>
+        <div class="error-message historical-message" role="alert">
+          <span>{{ error() }}</span>
+          <button type="button" class="message-dismiss" aria-label="Dismiss message" (click)="dismissFeedback()">
+            <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+              <path d="m4 4 8 8M12 4l-8 8" />
+            </svg>
+          </button>
+        </div>
       }
       @if (successMessage()) {
-        <div class="success-message historical-message" role="status">{{ successMessage() }}</div>
+        <div class="success-message historical-message" role="status">
+          <span>{{ successMessage() }}</span>
+          <button type="button" class="message-dismiss" aria-label="Dismiss message" (click)="dismissFeedback()">
+            <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+              <path d="m4 4 8 8M12 4l-8 8" />
+            </svg>
+          </button>
+        </div>
       }
     </section>
   }
