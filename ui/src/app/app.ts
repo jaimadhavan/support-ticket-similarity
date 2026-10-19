@@ -101,6 +101,13 @@ export class App implements OnInit {
 
   }
 
+  onKeywordChange() {
+    this.searchPerformed.set(false);
+    this.matchStatus.set(null);
+    this.tickets.set([]);
+    this.error.set('');
+  }
+
   private getSearchErrorMessage(error: unknown): string {
     if (error instanceof HttpErrorResponse) {
       if (error.status === 400 && typeof error.error?.error === 'string') {

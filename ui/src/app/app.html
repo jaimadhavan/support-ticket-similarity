@@ -24,6 +24,7 @@
       <input
         type="text"
         [(ngModel)]="keyword"
+        (ngModelChange)="onKeywordChange()"
         (keyup.enter)="searchTickets()"
         placeholder="Enter keyword or sentence (e.g., 'login password reset', 'billing invoice issue'...)"
         class="search-input"

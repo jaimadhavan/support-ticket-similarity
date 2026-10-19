@@ -92,6 +92,38 @@ describe('App', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Please ensure the backend server is running');
   });
 
+  it('should hide a no-match message while the user edits the search and show it after searching again', async () => {
+    TestBed.overrideProvider(TicketService, {
+      useValue: {
+        getHistoricalTicketAvailability: () => of({ count: 1 }),
+        searchTickets: () => of({ tickets: [], matchStatus: 'no_good_match' }),
+        loadHistoricalTickets: () => of({}),
+        removeHistoricalTickets: () => of({})
+      }
+    });
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.componentInstance.keyword = 'invoice';
+    fixture.componentInstance.searchPerformed.set(true);
+    fixture.componentInstance.matchStatus.set('no_good_match');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.no-results')).toBeTruthy();
+
+    const input = fixture.nativeElement.querySelector('.search-input') as HTMLInputElement;
+    input.value = 'invoice paid';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.no-results')).toBeNull();
+
+    (fixture.nativeElement.querySelector('.btn-primary') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.no-results')).toBeTruthy();
+  });
+
   it('should show load success and record counts inline', async () => {
     TestBed.overrideProvider(TicketService, {
       useValue: {

@@ -35,14 +35,6 @@ Requirements: Node.js 18+, npm, and PostgreSQL 12+.
 
 4. Open `http://localhost:4200`, expand **Manage Historical Tickets**, and load the seed tickets. Search for an issue description or terms; the UI displays resolved precedents, matched terms, and their resolutions.
 
-## Angular UI
-
-- Built with Angular 22 as a standalone application; `ui/src/main.ts` bootstraps the root app configured in `ui/src/app/app.config.ts`.
-- The root component in `ui/src/app/app.ts` manages search, loading, availability, and feedback state. Its template and styles are in `ui/src/app/app.html` and `ui/src/app/app.css`.
-- `ui/src/app/services/ticket.service.ts` calls the Express API using the `/api/tickets` base URL from `ui/src/environments/environment.ts`.
-- During development, `ui/proxy.config.json` forwards `/api` requests to `http://localhost:3000`. This is why the backend should be running before starting searches or loading data.
-- Useful UI commands, run from `ui/`: `npm start` (dev server), `npm test -- --watch=false` (unit tests), and `npm run build` (production build).
-
 ## What the prototype does
 
 - Express API with PostgreSQL-backed full-text and tag search.
