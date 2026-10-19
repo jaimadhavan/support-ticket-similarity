@@ -51,7 +51,7 @@ npm install
 npm run init-db
 ```
 
-This will create the `tickets` table with necessary indexes for full-text search.
+This creates the ticket and category tables, adds indexes for full-text search, and migrates any existing ticket category values into the categories table. Tickets store a `category_id` foreign key; the old text `category` column is removed after its values are migrated. Rerun this command on an existing database to apply the schema migration.
 
 4. Start the backend server:
 ```bash
@@ -106,7 +106,7 @@ The loading process:
 ```
 GET /api/tickets/availability
 ```
-Returns `{ "count": <number> }`. The UI checks this on startup and after loading or deleting history; search remains disabled until the count is available and greater than zero.
+Returns `{ "count": <number>, "resolvedCount": <number> }`. `count` includes tickets of every status and is shown in Manage Historical Tickets; `resolvedCount` is used to enable similarity search only when at least one resolved ticket exists. The UI refreshes these counts on startup, when opening Search or Manage Historical Tickets, and after loading or deleting historical tickets.
 
 ### Load Tickets
 ```
@@ -126,7 +126,15 @@ Searches resolved tickets by descriptive terms in subject, description, resoluti
 DELETE /api/tickets/removeHistoricalTickets
 ```
 Deletes all tickets from the database.
-In the UI, clicking **Remove Historical Tickets** first opens a confirmation prompt showing the number of records to be deleted. The delete request is sent only after the user confirms; cancel leaves the database unchanged. A separate **Cancel** button collapses the management section without applying changes.
+In the UI, clicking **Remove Historical Tickets** first opens a confirmation prompt showing the total number of ticket records to be deleted, regardless of status. The delete request is sent only after the user confirms; cancel leaves the database unchanged.
+
+### Admin management APIs
+
+- `GET/POST/PUT/DELETE /api/categories` lists, adds, renames, and soft-deletes categories. Deleting a category deactivates it; it does not remove the category or rewrite existing tickets.
+- `GET/POST /api/admin/tickets` and `PUT/DELETE /api/admin/tickets/:ticketId` list, add, edit, and permanently delete individual ticket records. Ticket status is limited to `new`, `inprogress`, or `resolved`.
+- Ticket category choices come from the categories table and use category IDs in ticket records. Historical loading creates each unique category as needed and writes its ID to the associated ticket. Deactivated categories are unavailable for new tickets but can be retained on tickets already assigned to them.
+
+The UI role selector defaults to **Support Agent** and offers **Admin** management menus for categories, tickets, and historical data. Historical management displays the total ticket count across all statuses and keeps load and confirmed remove actions in a compact view; load/remove feedback is shown only on that page and clears on navigation. Search is enabled only when at least one resolved ticket exists, and search results include resolved tickets only. Ticket management paginates at 10, 20, 50, or 100 records per page and provides a per-ticket expanded details view; successful add/edit operations show inline confirmation. Resolution notes can be left blank until a ticket is marked resolved. Admin form controls and action styling follow the Search-page style specification in `style-specification/TICKET_SIMILARITY_SEARCH.md`. This is a presentation-only demo switch, not authentication or authorization: the API does not enforce roles, so do not expose this prototype to untrusted users.
 
 ## Using the Application
 
@@ -164,7 +172,7 @@ These are fixture-level checks using a simple token-overlap simulation of the me
 
 The `tickets` table includes:
 - `ticket_id`: Unique identifier (VARCHAR)
-- `category`: Ticket category (auth, sync, render, billing, export, perm, perf, api)
+- `category_id`: Foreign key to `categories.id`
 - `subject`: Ticket subject/title
 - `description`: Ticket description
 - `resolution_notes`: How the ticket was resolved
@@ -172,9 +180,11 @@ The `tickets` table includes:
 - `created_at`: Ticket creation date
 - `status`: Ticket status (resolved, etc.)
 
+The `categories` table holds unique category names, their active state, and an ID referenced by tickets. The Admin screens retrieve category names and IDs from this table.
+
 Indexes:
 - Unique index on `ticket_id`
-- Index on `category` for filtering
+- Index on `category_id` for filtering
 - GIN index on `tags` for tag-based search
 - Full-text search index on subject, description, and resolution notes
 

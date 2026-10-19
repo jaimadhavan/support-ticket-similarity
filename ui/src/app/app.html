@@ -2,230 +2,222 @@
   <header>
     <h1>Support Ticket Similarity Search</h1>
     <p>Find similar resolved tickets by keyword search</p>
+    <label class="role-selector">
+      User role
+      <select aria-label="User role" [ngModel]="userRole()" (ngModelChange)="changeUserRole($event)">
+        <option value="Support Agent">Support Agent</option>
+        <option value="Admin">Admin</option>
+      </select>
+    </label>
   </header>
 
-  @if (availabilityLoading()) {
-    <div class="availability-message" role="status">
-      Checking historical ticket availability...
-    </div>
-  } @else if (availabilityError()) {
-    <div class="error-message" role="alert">
-      {{ availabilityError() }}
-      <button class="btn btn-secondary" (click)="refreshHistoricalTicketAvailability()">Retry</button>
-    </div>
-  } @else if (historicalTicketCount() === 0) {
-    <div class="availability-message" role="status">
-      No historical tickets are available yet. Load historical tickets to enable search.
-    </div>
-  }
-
-  <div class="search-section">
-    <div class="search-box">
-      <input
-        type="text"
-        [(ngModel)]="keyword"
-        (ngModelChange)="onKeywordChange()"
-        (keyup.enter)="searchTickets()"
-        placeholder="Enter keyword or sentence (e.g., 'login password reset', 'billing invoice issue'...)"
-        class="search-input"
-      />
-      <select
-        [(ngModel)]="resultLimit"
-        class="limit-select"
-        title="Number of results to show"
-      >
-        <option [ngValue]="3">3 results</option>
-        <option [ngValue]="5">5 results</option>
-        <option [ngValue]="10">10 results</option>
-        <option [ngValue]="20">20 results</option>
-      </select>
-      <button
-        (click)="searchTickets()"
-        [disabled]="loading() || removing() || availabilityLoading() || availabilityError() !== '' || (historicalTicketCount() ?? 0) === 0"
-        class="btn btn-primary"
-      >
-        @if (loading()) {
-          Searching...
-        } @else {
-          Search
-        }
-      </button>
-      <button
-        (click)="clearSearch()"
-        [disabled]="loading()"
-        class="btn btn-secondary"
-      >
-        Clear
-      </button>
-    </div>
-    <div class="load-section">  
-      <!-- <button
-      (click)="loadTickets()"
-      [disabled]="loading()"
-      class="btn btn-load"
-      title="Load tickets from JSON file into database"
-      >
-        Load Tickets from JSON
-      </button> -->
-   </div> 
- <div>
-    <details #historicalTicketsDetails>
-      <summary>Manage Historical Tickets</summary>
-      <div class="load-section">
-    <button
-      (click)="requestRemoveTickets()"
-      [disabled]="loading() || removing() || removeConfirmationOpen()"
-      class="btn btn-remove"
-      title="Remove Historical Tickets"
-    >
-      Remove Historical Tickets
-    </button>
-     <button
-      (click)="loadTickets()"
-      [disabled]="loading() || removing()"
-      class="btn btn-load"
-      title="Load tickets from JSON file into database"
-    >
-      Load Tickets from JSON
-    </button> 
+  <nav class="app-navigation" aria-label="Application pages">
     <button
       type="button"
-      (click)="closeHistoricalTicketManagement(historicalTicketsDetails)"
-      [disabled]="loading() || removing()"
-      class="btn btn-secondary btn-manage-cancel"
-    >
-      Cancel
-    </button>
-    </div>
+      class="nav-button"
+      [class.active]="activePage() === 'search'"
+      (click)="navigateTo('search')"
+    >Ticket Similarity Search</button>
+    @if (userRole() === 'Admin') {
+      <button
+        type="button"
+        class="nav-button"
+        [class.active]="activePage() === 'categories'"
+        (click)="navigateTo('categories')"
+      >Manage Ticket Categories</button>
+      <button
+        type="button"
+        class="nav-button"
+        [class.active]="activePage() === 'tickets'"
+        (click)="navigateTo('tickets')"
+      >Manage Tickets</button>
+      <button
+        type="button"
+        class="nav-button"
+        [class.active]="activePage() === 'historical'"
+        (click)="navigateTo('historical')"
+      >Manage Historical Tickets</button>
+    }
+  </nav>
 
-    @if (removeConfirmationOpen()) {
-      <div class="delete-confirmation" role="alertdialog" aria-modal="true" aria-labelledby="delete-confirmation-title">
-        <p id="delete-confirmation-title">
-          Delete all {{ historicalTicketCount() }} historical ticket{{ historicalTicketCount() === 1 ? '' : 's' }} from the database? This action cannot be undone.
-        </p>
-        <div class="confirmation-actions">
-          <button
-            type="button"
-            class="btn btn-secondary"
-            (click)="cancelRemoveTickets()"
-            [disabled]="removing()"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            class="btn btn-remove"
-            (click)="confirmRemoveTickets()"
-            [disabled]="removing()"
-          >
-            @if (removing()) {
-              Deleting...
-            } @else {
-              Confirm Delete
-            }
-          </button>
-        </div>
+  @if (activePage() === 'search') {
+    @if (availabilityLoading()) {
+      <div class="availability-message" role="status">Checking historical ticket availability...</div>
+    } @else if (availabilityError()) {
+      <div class="error-message" role="alert">
+        {{ availabilityError() }}
+        <button class="btn btn-secondary" (click)="refreshHistoricalTicketAvailability()">Retry</button>
+      </div>
+    } @else if (resolvedTicketCount() === 0) {
+      <div class="availability-message" role="status">
+        No resolved tickets are available for search yet. Load or resolve tickets to enable search.
       </div>
     }
 
-    </details>
-  </div>
-
-  @if (error()) {
-    <div class="error-message">
-      {{ error() }}
-    </div>
-  }
-
-  @if (successMessage()) {
-    <div class="success-message" role="status">
-      {{ successMessage() }}
-    </div>
-  }
-
-  @if (searchPerformed() && matchStatus() === 'no_good_match' && !loading() && !error()) {
-    <div class="no-results">
-      No strong match among resolved tickets for "{{ keyword }}". Try adding specific product or error details. Results are only shown when at least two meaningful terms match (or one descriptive term is searched).
-    </div>
-  }
-
-  @if (tickets().length > 0) {
-    <div class="results-section">
-      <h2>Results for "{{ keyword }}" ({{ tickets().length }} tickets)</h2>
-      
-      <div class="tickets-list">
-        @for (ticket of tickets(); track ticket.ticket_id; let i = $index) {
-          <div class="ticket-card">
-            <div class="ticket-serial">{{ i + 1 }}</div>
-            <div class="ticket-header">
-              <div class="ticket-field">
-                <span class="field-label">Ticket#:</span>
-                <span class="ticket-id ticket-value">{{ ticket.ticket_id }}</span>
-              </div>
-              <div class="ticket-field">
-                <span class="field-label">Category:</span>
-                <span class="ticket-category ticket-value">{{ ticket.category }}</span>
-              </div>
-              <div class="ticket-field">
-                <span class="field-label">Status:</span>
-                <span class="ticket-status ticket-value">{{ ticket.status }}</span>
-              </div>
-            </div>            
-            
-            <h3 class="ticket-subject">{{ ticket.subject }}</h3>
-
-            @if (ticket.matchedWords?.length) {
-              <div class="matched-words">
-                <strong>Why this matched ({{ ticket.matchCount }} terms)</strong>
-                <div class="matched-words-list">
-                  @for (word of ticket.matchedWords; track word) {
-                    <span class="matched-word">{{ word }}</span>
-                  }
-                </div>
-              </div>
-            }
-            
-            <div class="ticket-section">
-              <strong>Description:</strong>
-              <p>{{ ticket.description }}</p>
-            </div>
-            
-            <div class="ticket-section resolution-section">
-              <strong>Resolution:</strong>
-              <button 
-                class="copy-button" 
-                (click)="copyToClipboard(ticket.resolution_notes, $event)"
-                [class.copied]="copiedTicketId === ticket.ticket_id"
-                title="Copy resolution to clipboard"
-              >
-                @if (copiedTicketId === ticket.ticket_id) {
-                  ✓ Copied
-                } @else {
-                  📋 Copy
-                }
-              </button>
-              <p>{{ ticket.resolution_notes }}</p>
-            </div>
-            
-            <!-- <div class="ticket-footer">
-              <div class="ticket-tags-section">
-                <span class="field-label">Tags:</span>
-                <div class="ticket-tags">
-                  @for (tag of ticket.tags; track tag) {
-                    <span class="tag">{{ tag }}</span>
-                  }
-                </div>
-              </div>
-              <span class="ticket-date">{{ ticket.created_at }}</span>
-            </div>
-            @if (ticket.relevance) {
-              <div class="relevance-score">
-                Relevance: {{ (ticket.relevance * 100).toFixed(1) }}%
-              </div>
-            } -->
-          </div>
-        }
+    <div class="search-section">
+      <section>
+        <header class="search-heading">
+          <h2>Ticket Similarity Search</h2>
+        </header>
+      </section>
+      <div class="search-box">
+        <input
+          type="text"
+          [(ngModel)]="keyword"
+          (ngModelChange)="onKeywordChange()"
+          (keyup.enter)="searchTickets()"
+          placeholder="Enter keyword or sentence (e.g., 'login password reset', 'billing invoice issue'...)"
+          class="search-input"
+        />
+        <select [(ngModel)]="resultLimit" class="limit-select" title="Number of results to show">
+          <option [ngValue]="3">3 results</option>
+          <option [ngValue]="5">5 results</option>
+          <option [ngValue]="10">10 results</option>
+          <option [ngValue]="20">20 results</option>
+        </select>
+        <button
+          (click)="searchTickets()"
+          [disabled]="loading() || removing() || availabilityLoading() || availabilityError() !== '' || (resolvedTicketCount() ?? 0) === 0"
+          class="btn btn-primary"
+        >
+          @if (loading()) { Searching... } @else { Search }
+        </button>
+        <button (click)="clearSearch()" [disabled]="loading()" class="btn btn-secondary">Clear</button>
       </div>
     </div>
+
+    @if (error()) {
+      <div class="error-message" role="alert">{{ error() }}</div>
+    }
+    @if (searchPerformed() && matchStatus() === 'no_good_match' && !loading() && !error()) {
+      <div class="no-results">
+        No strong match among resolved tickets for "{{ keyword }}". Try adding specific product or error details. Results are only shown when at least two meaningful terms match (or one descriptive term is searched).
+      </div>
+    }
+    @if (tickets().length > 0) {
+      <div class="results-section">
+        <h2>Results for "{{ keyword }}" ({{ tickets().length }} tickets)</h2>
+        <div class="tickets-list">
+          @for (ticket of tickets(); track ticket.ticket_id; let i = $index) {
+            <div class="ticket-card">
+              <div class="ticket-serial">{{ i + 1 }}</div>
+              <div class="ticket-header">
+                <div class="ticket-field">
+                  <span class="field-label">Ticket#:</span>
+                  <span class="ticket-id ticket-value">{{ ticket.ticket_id }}</span>
+                </div>
+                <div class="ticket-field">
+                  <span class="field-label">Category:</span>
+                  <span class="ticket-category ticket-value">{{ ticket.category }}</span>
+                </div>
+                <div class="ticket-field">
+                  <span class="field-label">Status:</span>
+                  <span class="ticket-status ticket-value">{{ ticket.status }}</span>
+                </div>
+              </div>
+              <h3 class="ticket-subject">{{ ticket.subject }}</h3>
+              @if (ticket.matchedWords?.length) {
+                <div class="matched-words">
+                  <strong>Why this matched ({{ ticket.matchCount }} terms)</strong>
+                  <div class="matched-words-list">
+                    @for (word of ticket.matchedWords; track word) {
+                      <span class="matched-word">{{ word }}</span>
+                    }
+                  </div>
+                </div>
+              }
+              <div class="ticket-section">
+                <strong>Description:</strong>
+                <p>{{ ticket.description }}</p>
+              </div>
+              <div class="ticket-section resolution-section">
+                <strong>Resolution:</strong>
+                <button
+                  class="copy-button"
+                  (click)="copyToClipboard(ticket.resolution_notes, $event)"
+                  [class.copied]="copiedTicketId === ticket.ticket_id"
+                  title="Copy resolution to clipboard"
+                >
+                  @if (copiedTicketId === ticket.ticket_id) { ✓ Copied } @else { 📋 Copy }
+                </button>
+                <p>{{ ticket.resolution_notes }}</p>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  }
+
+  @if (userRole() === 'Admin' && activePage() === 'categories') {
+    <app-categories-page />
+  }
+  @if (userRole() === 'Admin' && activePage() === 'tickets') {
+    <app-tickets-page />
+  }
+  @if (userRole() === 'Admin' && activePage() === 'historical') {
+    <section class="historical-page">
+      <header class="historical-heading page-heading">
+        <div>
+          <h2>Manage Historical Tickets</h2>
+          <p>Load sample tickets or remove historical tickets from the database.</p>
+        </div>
+        <div class="historical-count-card" [class.empty]="historicalTicketCount() === 0">
+          @if (availabilityLoading()) {
+            <strong aria-label="Checking ticket count">Checking...</strong>
+          } @else if (availabilityError()) {
+            <strong aria-label="Ticket count unavailable">Unavailable</strong>
+          } @else {
+            <strong>{{ historicalTicketCount() }} tickets</strong>
+          }
+          <span class="ticket-count-description">(All statuses)</span>
+        </div>
+      </header>
+
+      <div class="historical-actions">
+        <button
+          type="button"
+          (click)="loadTickets()"
+          [disabled]="loading() || removing()"
+          class="btn btn-load"
+        >{{ loading() ? 'Loading tickets...' : 'Load Tickets from JSON' }}</button>
+        <button
+          type="button"
+          (click)="requestRemoveTickets()"
+          [disabled]="loading() || removing() || removeConfirmationOpen() || availabilityLoading() || availabilityError() !== '' || (historicalTicketCount() ?? 0) === 0"
+          class="btn btn-remove"
+        >Remove Historical Tickets</button>
+      </div>
+      @if (removeConfirmationOpen()) {
+        <div class="delete-confirmation" role="alertdialog" aria-modal="true" aria-labelledby="historical-delete-title">
+          <p id="historical-delete-title">
+            Delete all {{ historicalTicketCount() }} historical ticket{{ historicalTicketCount() === 1 ? '' : 's' }} from the database? This action cannot be undone.
+          </p>
+          <div class="confirmation-actions">
+            <button type="button" class="btn btn-secondary" (click)="cancelRemoveTickets()" [disabled]="removing()">Cancel</button>
+            <button type="button" class="btn btn-remove" (click)="confirmRemoveTickets()" [disabled]="removing()">
+              @if (removing()) { Deleting... } @else { Confirm Delete }
+            </button>
+          </div>
+        </div>
+      }
+      @if (availabilityError()) {
+        <div class="error-message historical-message" role="alert">
+          {{ availabilityError() }}
+          <button class="btn btn-secondary" (click)="refreshHistoricalTicketAvailability()">Retry</button>
+        </div>
+      } @else if (!availabilityLoading() && historicalTicketCount() === 0) {
+        <div class="historical-empty-state" role="status">
+          <strong>No historical tickets yet</strong>
+          <span>Load the sample tickets to enable similarity searches. The remove action is unavailable until tickets are present.</span>
+        </div>
+      }
+      @if (error()) {
+        <div class="error-message historical-message" role="alert">{{ error() }}</div>
+      }
+      @if (successMessage()) {
+        <div class="success-message historical-message" role="status">{{ successMessage() }}</div>
+      }
+    </section>
   }
 </div>

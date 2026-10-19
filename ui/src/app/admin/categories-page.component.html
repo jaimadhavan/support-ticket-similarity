@@ -1,0 +1,82 @@
+<section class="admin-page" #adminPage>
+  <header class="page-heading">
+    <h2>Manage Ticket Categories</h2>
+    <p>Categories marked inactive remain on existing tickets but cannot be assigned to new ones.</p>
+  </header>
+
+  @if (error()) {
+    <div class="error-message" role="alert">{{ error() }}</div>
+  }
+  @if (message()) {
+    <div class="success-message" role="status">{{ message() }}</div>
+  }
+
+  <form class="admin-form category-form" (ngSubmit)="saveCategory()">
+    <label for="category-name">
+      Category name
+      <input
+        id="category-name"
+        #categoryNameInput
+        name="categoryName"
+        [(ngModel)]="categoryName"
+        maxlength="50"
+        required
+        placeholder="e.g. billing"
+        [disabled]="loading()"
+        autocomplete="off"
+      />
+    </label>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit" [disabled]="loading()">
+        {{ editingId === null ? 'Add Category' : 'Save Category' }}
+      </button>
+      @if (editingId !== null) {
+        <button class="btn btn-secondary" type="button" (click)="cancelEdit()">Cancel Edit</button>
+      }
+    </div>
+  </form>
+
+  @if (loading() && categories().length === 0) {
+    <p role="status">Loading categories...</p>
+  } @else if (categories().length === 0) {
+    <p>No categories are available yet.</p>
+  } @else {
+    <div class="admin-list">
+      @for (category of categories(); track category.id) {
+        <article class="admin-list-row">
+          <div>
+            <strong>{{ category.name }}</strong>
+            <span class="state-pill" [class.inactive]="!category.is_active">
+              {{ category.is_active ? 'Active' : 'Inactive' }}
+            </span>
+          </div>
+          <div class="row-actions">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              (click)="editCategory(category, adminPage, categoryNameInput)"
+              [disabled]="loading()"
+            >Edit</button>
+            @if (category.is_active && confirmingDeleteId !== category.id) {
+              <button
+                type="button"
+                class="btn btn-remove"
+                (click)="confirmingDeleteId = category.id"
+                [disabled]="loading()"
+              >Delete</button>
+            }
+          </div>
+          @if (confirmingDeleteId === category.id) {
+            <div class="inline-confirmation" role="alertdialog">
+              <span>Soft-delete {{ category.name }}? Existing tickets keep it, but new tickets cannot use it.</span>
+              <div class="row-actions">
+                <button type="button" class="btn btn-secondary" (click)="confirmingDeleteId = null">Cancel</button>
+                <button type="button" class="btn btn-remove" (click)="deactivateCategory(category)" [disabled]="loading()">Confirm Delete</button>
+              </div>
+            </div>
+          }
+        </article>
+      }
+    </div>
+  }
+</section>

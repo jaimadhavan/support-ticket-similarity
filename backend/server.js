@@ -4,6 +4,8 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const ticketsRoute = require('./routes/tickets.route');
+const categoriesRoute = require('./routes/categories.route');
+const managedTicketsRoute = require('./routes/managed-tickets.route');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const pool = require('./db');
@@ -14,6 +16,8 @@ app.use(express.json());
 
 // Routes
 app.use('/api/tickets', ticketsRoute);
+app.use('/api/categories', categoriesRoute);
+app.use('/api/admin/tickets', managedTicketsRoute);
 
 app.use((req, res) => {
     res.status(404).json({

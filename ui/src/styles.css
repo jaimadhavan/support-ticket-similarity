@@ -1,1 +1,147 @@
 /* You can add global styles to this file, and also import other style files */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.page-heading h2{
+  margin:0;
+}
+
+.historical-page {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  margin-top: 0.25rem;
+  padding: 0.65rem !important;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+  overflow: auto;
+}
+
+.historical-heading, .search-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+  text-align: left !important;
+}
+
+.historical-heading h2 {
+  margin-bottom: 0.3rem;
+  color: #1f2937;
+  font-size: 1.5rem;
+}
+
+.historical-heading p {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.historical-count-card {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0.75rem !important;
+  border: 1px solid #bfdbfe;
+  border-radius: 4px;
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.ticket-count-description {
+  margin-left: 0.3rem !important;
+  color: #1e40af;
+  font-size: 0.9rem;
+}
+
+.historical-count-card strong {
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.historical-count-card.empty {
+  border-color: #e5e7eb;
+  background: white;
+  color: #6b7280;
+}
+
+.historical-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.historical-actions .btn {
+  width: auto;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.875rem;
+}
+
+.historical-empty-state {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 5px;
+  background: white;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.historical-empty-state strong {
+  color: #334155;
+}
+
+.historical-message {
+  margin-top: 0.65rem;
+}
+
+.historical-message .btn {
+  width: auto;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.875rem;
+}
+
+.btn-remove:disabled {
+  background: #cbd5e1;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
+@media (max-width: 768px) {
+  .historical-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .historical-actions {
+    align-items: stretch;
+  }
+
+  .historical-actions .btn {
+    flex: 1 1 auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .historical-page {
+    padding: 0.5rem;
+  }
+
+  .historical-actions {
+    flex-direction: column;
+  }
+
+  .historical-actions .btn {
+    width: 100%;
+  }
+}

@@ -14,7 +14,8 @@ const pool = new Pool({
 async function initializeDatabase() {
     try {
         console.log('Connecting to database...');
-        await pool.connect();
+        const client = await pool.connect();
+        client.release();
         console.log('Connected successfully');
 
         console.log('Reading schema.sql...');

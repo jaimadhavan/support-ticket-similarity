@@ -27,12 +27,19 @@ Angular UI ── GET /api/tickets/search ──► Express API
                                       PostgreSQL
                               tickets + full-text/tag indexes
 
-Historical seed JSON ── POST /loadHistoricalTickets ──► validate and upsert
+Historical seed JSON ── POST /loadHistoricalTickets ──► validate and insert unique tickets
+                                                       └─ category name → category_id
+
+Admin UI ──► category/ticket CRUD and historical load/delete ──► Express ──► PostgreSQL
+                 ▲                                │
+                 └──── total + resolved counts ───┘
 ```
 
 The Angular component calls `TicketService`, which sends requests through the development proxy to the Express routes. Search terms are lowercased, deduplicated, and stripped of stop words. PostgreSQL searches subject, description, resolution notes, and tags, excludes non-resolved tickets, and returns matching terms and a match count. Candidates are ordered by matched-term count, PostgreSQL `ts_rank`, then recency. The UI displays the evidence and resolution for each candidate; an empty qualified result becomes a no-strong-match message. Rank is only a sorting signal.
 
-Historical loading reads the bundled JSON file in the API, rejects incomplete records, inserts valid tickets while ignoring duplicate IDs, and reports totals split into inserted, invalid, duplicate, and failed records. PostgreSQL stores the ticket fields and has indexes for ID, category, tags, and full-text search.
+Historical loading reads the bundled JSON file in the API, rejects incomplete records, inserts valid tickets while ignoring duplicate IDs, and reports totals split into inserted, invalid, duplicate, and failed records. The UI reports this outcome only on the Historical Tickets page, clearing the message when the user navigates away. The availability endpoint separately reports the total number of rows and the number with `resolved` status. Historical management displays the total across all statuses and uses that total for removal confirmation and empty-state handling; Search is enabled only when at least one resolved ticket exists. Availability is refreshed at startup, when opening either page, and after load/delete actions. PostgreSQL stores the ticket fields and has indexes for ID, category, tags, and full-text search.
+
+The Admin demo pages manage category lookup data and ticket records through Express APIs. Tickets reference `categories.id` through `category_id`; historical loading creates unique category rows as needed and stores each ID on its ticket. Schema initialization migrates old text categories before removing that column. Categories can be renamed and are soft-deleted by marking them inactive. Tickets use one of `new`, `inprogress`, or `resolved`; an inactive category may remain on a ticket that already uses it. Resolution notes are required once a ticket is resolved. Ticket management paginates results, expands individual records for full details, and confirms successful create/edit operations inline. Historical management retains load and confirmed remove actions in a compact page. Admin form controls and action styling follow the Search-page specification. The role selector only changes Angular navigation and does not protect the APIs.
 
 ## Trade-offs
 
@@ -45,4 +52,4 @@ Historical loading reads the bundled JSON file in the API, rejects incomplete re
 
 Fixture checks cover the supplied cases: login → T-1001, blank revenue chart → T-1201, duplicate charge → T-1303, and Snowflake → no strong match. These checks simulate token overlap against the seed data; they do not execute the PostgreSQL query or establish production search quality.
 
-With more time, connect an integration test to PostgreSQL, build a labeled evaluation set with support agents, measure precision/recall and latency, and tune the threshold based on the cost of bad suggestions versus missed precedents. Then validate the real data volume and ticket-system integration requirements. Only if lexical search proves insufficient would I compare embeddings or a hybrid retriever. Production hardening would also require access control, auditability, safe operational controls, monitoring, and a managed ingestion path.
+With more time, connect an integration test to PostgreSQL, build a labeled evaluation set with support agents, measure precision/recall and latency, and tune the threshold based on the cost of bad suggestions versus missed precedents. Then validate the real data volume and ticket-system integration requirements. Only if lexical search proves insufficient would I compare embeddings or a hybrid retriever. Production hardening would also require server-enforced access control for the Admin APIs, auditability, safe operational controls, monitoring, and a managed ingestion path.

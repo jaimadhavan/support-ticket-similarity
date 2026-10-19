@@ -4,6 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { HttpClientModule } from '@angular/common/http';
 import { TicketService } from './services/ticket.service';
+import { CategoriesPageComponent } from './admin/categories-page.component';
+import { TicketsPageComponent } from './admin/tickets-page.component';
+
+type UserRole = 'Support Agent' | 'Admin';
+type AppPage = 'search' | 'categories' | 'tickets' | 'historical';
+
 interface Ticket {
   ticket_id: string;
   category: string;
@@ -20,11 +26,13 @@ interface Ticket {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule],
+  imports: [CommonModule, FormsModule, HttpClientModule, CategoriesPageComponent, TicketsPageComponent],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
 export class App implements OnInit {
+  userRole = signal<UserRole>('Support Agent');
+  activePage = signal<AppPage>('search');
   keyword = '';
   resultLimit = 5;
   tickets = signal<Ticket[]>([]);
@@ -33,6 +41,7 @@ export class App implements OnInit {
   removeConfirmationOpen = signal(false);
   availabilityLoading = signal(true);
   historicalTicketCount = signal<number | null>(null);
+  resolvedTicketCount = signal<number | null>(null);
   availabilityError = signal('');
   error = signal('');
   successMessage = signal('');
@@ -42,6 +51,27 @@ export class App implements OnInit {
 
   constructor(private ticketService: TicketService) {}
 
+  changeUserRole(role: UserRole) {
+    this.userRole.set(role);
+    if (role === 'Support Agent') {
+      this.activePage.set('search');
+      this.removeConfirmationOpen.set(false);
+    }
+  }
+
+  navigateTo(page: AppPage) {
+    if (page !== 'search' && this.userRole() !== 'Admin') {
+      return;
+    }
+    if (page !== this.activePage()) {
+      this.successMessage.set('');
+    }
+    this.activePage.set(page);
+    if (page === 'search' || page === 'historical') {
+      this.refreshHistoricalTicketAvailability();
+    }
+  }
+
   ngOnInit() {
     this.refreshHistoricalTicketAvailability();
   }
@@ -49,11 +79,13 @@ export class App implements OnInit {
   refreshHistoricalTicketAvailability() {
     this.availabilityLoading.set(true);
     this.historicalTicketCount.set(null);
+    this.resolvedTicketCount.set(null);
     this.availabilityError.set('');
 
     this.ticketService.getHistoricalTicketAvailability().subscribe({
-      next: (response: { count: number }) => {
+      next: (response: { count: number; resolvedCount: number }) => {
         this.historicalTicketCount.set(response.count);
+        this.resolvedTicketCount.set(response.resolvedCount);
         this.availabilityLoading.set(false);
       },
       error: (error: unknown) => {
@@ -68,7 +100,7 @@ export class App implements OnInit {
     if (
       this.availabilityLoading() ||
       this.removing() ||
-      (this.historicalTicketCount() ?? 0) === 0
+      (this.resolvedTicketCount() ?? 0) === 0
     ) {
       return;
     }
@@ -174,6 +206,9 @@ export class App implements OnInit {
   }
 
   requestRemoveTickets() {
+    if (this.availabilityLoading() || this.availabilityError() || (this.historicalTicketCount() ?? 0) === 0) {
+      return;
+    }
     this.error.set('');
     this.successMessage.set('');
     this.removeConfirmationOpen.set(true);
