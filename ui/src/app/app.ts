@@ -30,6 +30,7 @@ export class App implements OnInit {
   tickets = signal<Ticket[]>([]);
   loading = signal(false);
   removing = signal(false);
+  removeConfirmationOpen = signal(false);
   availabilityLoading = signal(true);
   historicalTicketCount = signal<number | null>(null);
   availabilityError = signal('');
@@ -148,6 +149,7 @@ export class App implements OnInit {
     this.removing.set(true);
     this.error.set('');
     this.successMessage.set('');
+    this.removeConfirmationOpen.set(false);
 
     this.ticketService.removeHistoricalTickets().subscribe({
       next: (response: { message: string; total: number }) => {
@@ -164,6 +166,28 @@ export class App implements OnInit {
     });
   }
 
+  requestRemoveTickets() {
+    this.error.set('');
+    this.successMessage.set('');
+    this.removeConfirmationOpen.set(true);
+  }
+
+  cancelRemoveTickets() {
+    this.removeConfirmationOpen.set(false);
+  }
+
+  closeHistoricalTicketManagement(section: HTMLDetailsElement) {
+    this.removeConfirmationOpen.set(false);
+    section.open = false;
+  }
+
+  confirmRemoveTickets() {
+    if (!this.removeConfirmationOpen() || this.removing()) {
+      return;
+    }
+    this.removeTickets();
+  }
+
   clearSearch() {
     this.keyword = '';
     this.tickets.set([]);
@@ -171,6 +195,7 @@ export class App implements OnInit {
     this.matchStatus.set(null);
     this.error.set('');
     this.successMessage.set('');
+    this.removeConfirmationOpen.set(false);
   }
 
   copyToClipboard(text: string, event: Event) {

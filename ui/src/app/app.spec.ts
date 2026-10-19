@@ -121,27 +121,82 @@ describe('App', () => {
     expect(fixture.nativeElement.querySelector('[role="status"].success-message')).toBeTruthy();
   });
 
-  it('should show remove success inline', async () => {
+  it('should ask for confirmation before deleting historical tickets', async () => {
+    let deleteCalls = 0;
     TestBed.overrideProvider(TicketService, {
       useValue: {
         getHistoricalTicketAvailability: () => of({ count: 0 }),
         searchTickets: () => of({ tickets: [], matchStatus: 'no_good_match' }),
         loadHistoricalTickets: () => of({}),
-        removeHistoricalTickets: () => of({
-          message: 'Historical tickets deleted successfully',
-          total: 4
-        })
+        removeHistoricalTickets: () => {
+          deleteCalls++;
+          return of({
+            message: 'Historical tickets deleted successfully',
+            total: 4
+          });
+        }
       }
     });
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
     await fixture.whenStable();
 
-    fixture.componentInstance.removeTickets();
+    fixture.componentInstance.historicalTicketCount.set(4);
+    fixture.componentInstance.requestRemoveTickets();
     fixture.detectChanges();
 
+    expect(fixture.nativeElement.textContent).toContain('Delete all 4 historical tickets');
+    expect(deleteCalls).toBe(0);
+
+    fixture.componentInstance.confirmRemoveTickets();
+    fixture.detectChanges();
+
+    expect(deleteCalls).toBe(1);
     expect(fixture.nativeElement.textContent).toContain('Historical tickets deleted successfully');
     expect(fixture.nativeElement.textContent).toContain('(4 tickets removed)');
     expect(fixture.nativeElement.querySelector('[role="status"].success-message')).toBeTruthy();
+  });
+
+  it('should cancel deletion without calling the delete API', async () => {
+    let deleteCalls = 0;
+    TestBed.overrideProvider(TicketService, {
+      useValue: {
+        getHistoricalTicketAvailability: () => of({ count: 2 }),
+        searchTickets: () => of({ tickets: [], matchStatus: 'no_good_match' }),
+        loadHistoricalTickets: () => of({}),
+        removeHistoricalTickets: () => {
+          deleteCalls++;
+          return of({ message: 'Deleted', total: 2 });
+        }
+      }
+    });
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    fixture.componentInstance.requestRemoveTickets();
+    fixture.detectChanges();
+    fixture.componentInstance.cancelRemoveTickets();
+    fixture.detectChanges();
+
+    expect(deleteCalls).toBe(0);
+    expect(fixture.nativeElement.querySelector('[role="alertdialog"]')).toBeNull();
+  });
+
+  it('should collapse historical ticket management when its Cancel button is clicked', async () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const section = fixture.nativeElement.querySelector('details') as HTMLDetailsElement;
+    section.open = true;
+    fixture.detectChanges();
+
+    const cancelButton = fixture.nativeElement.querySelector('.btn-manage-cancel') as HTMLButtonElement;
+    cancelButton.click();
+    fixture.detectChanges();
+
+    expect(section.open).toBe(false);
+    expect(fixture.componentInstance.removeConfirmationOpen()).toBe(false);
   });
 });

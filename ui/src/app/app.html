@@ -68,12 +68,12 @@
       </button> -->
    </div> 
  <div>
-    <details>
+    <details #historicalTicketsDetails>
       <summary>Manage Historical Tickets</summary>
       <div class="load-section">
     <button
-      (click)="removeTickets()"
-    [disabled]="loading() || removing()"
+      (click)="requestRemoveTickets()"
+      [disabled]="loading() || removing() || removeConfirmationOpen()"
       class="btn btn-remove"
       title="Remove Historical Tickets"
     >
@@ -87,7 +87,45 @@
     >
       Load Tickets from JSON
     </button> 
+    <button
+      type="button"
+      (click)="closeHistoricalTicketManagement(historicalTicketsDetails)"
+      [disabled]="loading() || removing()"
+      class="btn btn-secondary btn-manage-cancel"
+    >
+      Cancel
+    </button>
     </div>
+
+    @if (removeConfirmationOpen()) {
+      <div class="delete-confirmation" role="alertdialog" aria-modal="true" aria-labelledby="delete-confirmation-title">
+        <p id="delete-confirmation-title">
+          Delete all {{ historicalTicketCount() }} historical ticket{{ historicalTicketCount() === 1 ? '' : 's' }} from the database? This action cannot be undone.
+        </p>
+        <div class="confirmation-actions">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="cancelRemoveTickets()"
+            [disabled]="removing()"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="btn btn-remove"
+            (click)="confirmRemoveTickets()"
+            [disabled]="removing()"
+          >
+            @if (removing()) {
+              Deleting...
+            } @else {
+              Confirm Delete
+            }
+          </button>
+        </div>
+      </div>
+    }
 
     </details>
   </div>

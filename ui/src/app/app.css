@@ -133,6 +133,10 @@ header p {
   border: 1px solid #1d4ed8;
 }
 
+.btn-manage-cancel {
+  width: 100%;
+}
+
 .btn-remove {
   background-color: #FF0000;
   color: white;
@@ -144,11 +148,29 @@ header p {
   background-color: #1d4ed8;
 }
 
+.delete-confirmation {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  border-left: 4px solid #ea580c;
+  border-radius: 4px;
+  color: #7c2d12;
+}
+
+.confirmation-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
 .error-message {
   background-color: #f8d7da;
   color: #721c24;
   padding: 1rem;
   border-radius: 4px;
+  margin-top: 1rem;
   margin-bottom: 1rem;
   border: 1px solid #f5c6cb;
 }
@@ -171,6 +193,7 @@ header p {
   color: #065f46;
   padding: 1rem;
   border-radius: 4px;
+  margin-top: 1rem;
   margin-bottom: 1rem;
   border: 1px solid #a7f3d0;
 }
@@ -178,6 +201,7 @@ header p {
 .no-results {
   text-align: center;
   padding: 2rem;
+  margin-top: 1rem;
   color: #666;
   font-size: 1.1rem;
   line-height: 1.6;
@@ -210,12 +234,14 @@ header p {
   border-radius: 4px;
   padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: box-shadow 0.2s;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   position: relative;
 }
 
 .ticket-card:hover {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transform: translateY(-3px);
+  border-color: #93c5fd;
+  box-shadow: 0 8px 18px rgba(30, 64, 175, 0.12);
 }
 
 .ticket-serial {
@@ -289,6 +315,11 @@ header p {
   font-size: 1.25rem;
   margin-bottom: 1rem;
   font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.ticket-card:hover .ticket-subject {
+  color: #1d4ed8;
 }
 
 .ticket-section {
@@ -335,11 +366,13 @@ header p {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .copy-button:hover {
   background: #16a34a;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(22, 101, 52, 0.25);
 }
 
 .copy-button:active {
@@ -430,6 +463,28 @@ header p {
   border-radius: 12px;
   font-size: 0.875rem;
   font-weight: 500;
+  transition: transform 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.matched-word:hover {
+  background-color: #1d4ed8;
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(29, 78, 216, 0.25);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticket-card,
+  .ticket-subject,
+  .copy-button,
+  .matched-word {
+    transition: none;
+  }
+
+  .ticket-card:hover,
+  .copy-button:hover,
+  .matched-word:hover {
+    transform: none;
+  }
 }
 
 @media (max-width: 768px) {

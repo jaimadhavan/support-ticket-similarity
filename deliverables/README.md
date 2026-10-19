@@ -35,6 +35,14 @@ Requirements: Node.js 18+, npm, and PostgreSQL 12+.
 
 4. Open `http://localhost:4200`, expand **Manage Historical Tickets**, and load the seed tickets. Search for an issue description or terms; the UI displays resolved precedents, matched terms, and their resolutions.
 
+## Angular UI
+
+- Built with Angular 22 as a standalone application; `ui/src/main.ts` bootstraps the root app configured in `ui/src/app/app.config.ts`.
+- The root component in `ui/src/app/app.ts` manages search, loading, availability, and feedback state. Its template and styles are in `ui/src/app/app.html` and `ui/src/app/app.css`.
+- `ui/src/app/services/ticket.service.ts` calls the Express API using the `/api/tickets` base URL from `ui/src/environments/environment.ts`.
+- During development, `ui/proxy.config.json` forwards `/api` requests to `http://localhost:3000`. This is why the backend should be running before starting searches or loading data.
+- Useful UI commands, run from `ui/`: `npm start` (dev server), `npm test -- --watch=false` (unit tests), and `npm run build` (production build).
+
 ## What the prototype does
 
 - Express API with PostgreSQL-backed full-text and tag search.
@@ -44,6 +52,7 @@ Requirements: Node.js 18+, npm, and PostgreSQL 12+.
 - The UI checks the historical ticket count on startup and after management actions; search stays disabled if the table is empty or availability cannot be checked.
 - Queries containing only common words (for example, `the`) show an input-specific prompt to enter product, feature, or error terms; network failures are reported separately.
 - Historical-ticket load and delete results, including counts, are shown inline in the UI rather than in browser alerts.
+- Deleting historical tickets requires explicit confirmation in the UI, which states the number of records to be deleted and offers a cancel action. The management section also has a Cancel button to collapse it without applying changes.
 - No AI service or external model is required.
 
 ## Checks

@@ -126,6 +126,7 @@ Searches resolved tickets by descriptive terms in subject, description, resoluti
 DELETE /api/tickets/removeHistoricalTickets
 ```
 Deletes all tickets from the database.
+In the UI, clicking **Remove Historical Tickets** first opens a confirmation prompt showing the number of records to be deleted. The delete request is sent only after the user confirms; cancel leaves the database unchanged. A separate **Cancel** button collapses the management section without applying changes.
 
 ## Using the Application
 
