@@ -11,66 +11,68 @@
     <div class="success-message" role="status">{{ message() }}</div>
   }
 
-  <form class="admin-form ticket-form" (ngSubmit)="saveTicket()">
-    <h3>{{ editingTicketId ? 'Edit Ticket' : 'Add Ticket' }}</h3>
-    <div class="form-grid">
-      <label>
-        Ticket ID
-        <input #ticketIdInput name="ticketId" [(ngModel)]="form.ticket_id" required maxlength="50" />
-      </label>
-      <label>
-        Category
-        <select name="category" [(ngModel)]="form.category_id" required>
-          <option [ngValue]="null" disabled>Select category</option>
-          @for (category of categoryOptions; track category.id) {
-            <option [ngValue]="category.id">{{ category.name }}{{ category.is_active ? '' : ' (inactive)' }}</option>
-          }
-        </select>
-      </label>
-      <label>
-        Status
-        <select name="status" [(ngModel)]="form.status" required>
-          <option value="new">New</option>
-          <option value="inprogress">In Progress</option>
-          <option value="resolved">Resolved</option>
-        </select>
-      </label>
-      <label>
-        Created date
-        <input name="createdAt" type="date" [(ngModel)]="form.created_at" required />
-      </label>
-      <label class="wide-field">
-        Subject
-        <input name="subject" [(ngModel)]="form.subject" required />
-      </label>
-      <label class="wide-field">
-        Description
-        <textarea name="description" [(ngModel)]="form.description" rows="3" required></textarea>
-      </label>
-      <label class="wide-field">
-        Resolution notes{{ form.status === 'resolved' ? ' (required for resolved tickets)' : ' (optional until resolved)' }}
-        <textarea name="resolution" [(ngModel)]="form.resolution_notes" rows="3" [required]="form.status === 'resolved'"></textarea>
-      </label>
-      <label class="wide-field">
-        Tags (comma-separated)
-        <input name="tags" [(ngModel)]="form.tags" placeholder="login, password-reset" />
-      </label>
-    </div>
-    <div class="form-actions">
-      <button class="btn btn-primary" type="submit" [disabled]="loading() || categoryOptions.length === 0">
-        {{ editingTicketId ? 'Save Changes' : 'Add Ticket' }}
-      </button>
-      @if (editingTicketId) {
-        <button class="btn btn-secondary" type="button" (click)="cancelEdit()">Cancel Edit</button>
+  <details #ticketFormAccordion class="admin-form-accordion">
+    <summary>{{ editingTicketId ? 'Edit Ticket' : 'Add Ticket' }}</summary>
+    <form class="admin-form ticket-form" (ngSubmit)="saveTicket(ticketFormAccordion)">
+      <div class="form-grid">
+        <label>
+          Ticket ID
+          <input #ticketIdInput name="ticketId" [(ngModel)]="form.ticket_id" required maxlength="50" />
+        </label>
+        <label>
+          Category
+          <select name="category" [(ngModel)]="form.category_id" required>
+            <option [ngValue]="null" disabled>Select category</option>
+            @for (category of categoryOptions; track category.id) {
+              <option [ngValue]="category.id">{{ category.name }}{{ category.is_active ? '' : ' (inactive)' }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          Status
+          <select name="status" [(ngModel)]="form.status" required>
+            <option value="new">New</option>
+            <option value="inprogress">In Progress</option>
+            <option value="resolved">Resolved</option>
+          </select>
+        </label>
+        <label>
+          Created date
+          <input name="createdAt" type="date" [(ngModel)]="form.created_at" required />
+        </label>
+        <label class="wide-field">
+          Subject
+          <input name="subject" [(ngModel)]="form.subject" required />
+        </label>
+        <label class="wide-field">
+          Description
+          <textarea name="description" [(ngModel)]="form.description" rows="3" required></textarea>
+        </label>
+        <label class="wide-field">
+          Resolution notes{{ form.status === 'resolved' ? ' (required for resolved tickets)' : ' (optional until resolved)' }}
+          <textarea name="resolution" [(ngModel)]="form.resolution_notes" rows="3" [required]="form.status === 'resolved'"></textarea>
+        </label>
+        <label class="wide-field">
+          Tags (comma-separated)
+          <input name="tags" [(ngModel)]="form.tags" placeholder="login, password-reset" />
+        </label>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit" [disabled]="loading() || categoryOptions.length === 0">
+          {{ editingTicketId ? 'Save Changes' : 'Add Ticket' }}
+        </button>
+        @if (editingTicketId) {
+          <button class="btn btn-secondary" type="button" (click)="cancelEdit(ticketFormAccordion)">Cancel Edit</button>
+        }
+      </div>
+      @if (categoryOptions.length === 0) {
+        <p class="form-hint">Add an active category before creating a ticket.</p>
       }
-    </div>
-    @if (categoryOptions.length === 0) {
-      <p class="form-hint">Add an active category before creating a ticket.</p>
-    }
-  </form>
+    </form>
+  </details>
 
   <div class="ticket-list-heading">
-    <h3 class="list-heading">Ticket Count <span>({{ tickets().length }})</span></h3>
+    <h3 class="list-heading">Ticket List <span>({{ tickets().length }})</span></h3>
     @if (tickets().length > 0) {
       <label class="page-size-control">
         Records per page
@@ -100,7 +102,7 @@
             <button type="button" class="btn btn-secondary" (click)="toggleTicketDetails(ticket.ticket_id)">
               {{ expandedTicketId() === ticket.ticket_id ? 'View less' : 'View more' }}
             </button>
-            <button type="button" class="btn btn-secondary" (click)="editTicket(ticket, adminPage, ticketIdInput)" [disabled]="loading()">Edit</button>
+            <button type="button" class="btn btn-secondary" (click)="editTicket(ticket, adminPage, ticketFormAccordion, ticketIdInput)" [disabled]="loading()">Edit</button>
             @if (confirmingDeleteId !== ticket.ticket_id) {
               <button type="button" class="btn btn-remove" (click)="confirmingDeleteId = ticket.ticket_id" [disabled]="loading()">Delete</button>
             }

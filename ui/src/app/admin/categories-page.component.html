@@ -11,30 +11,33 @@
     <div class="success-message" role="status">{{ message() }}</div>
   }
 
-  <form class="admin-form category-form" (ngSubmit)="saveCategory()">
-    <label for="category-name">
-      Category name
-      <input
-        id="category-name"
-        #categoryNameInput
-        name="categoryName"
-        [(ngModel)]="categoryName"
-        maxlength="50"
-        required
-        placeholder="e.g. billing"
-        [disabled]="loading()"
-        autocomplete="off"
-      />
-    </label>
-    <div class="form-actions">
-      <button class="btn btn-primary" type="submit" [disabled]="loading()">
-        {{ editingId === null ? 'Add Category' : 'Save Category' }}
-      </button>
-      @if (editingId !== null) {
-        <button class="btn btn-secondary" type="button" (click)="cancelEdit()">Cancel Edit</button>
-      }
-    </div>
-  </form>
+  <details #categoryFormAccordion class="admin-form-accordion">
+    <summary>{{ editingId === null ? 'Add Category' : 'Edit Category' }}</summary>
+    <form class="admin-form category-form" (ngSubmit)="saveCategory(categoryFormAccordion)">
+      <label for="category-name">
+        Category name
+        <input
+          id="category-name"
+          #categoryNameInput
+          name="categoryName"
+          [(ngModel)]="categoryName"
+          maxlength="50"
+          required
+          placeholder="e.g. billing"
+          [disabled]="loading()"
+          autocomplete="off"
+        />
+      </label>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit" [disabled]="loading()">
+          {{ editingId === null ? 'Add Category' : 'Save Category' }}
+        </button>
+        @if (editingId !== null) {
+          <button class="btn btn-secondary" type="button" (click)="cancelEdit(categoryFormAccordion)">Cancel Edit</button>
+        }
+      </div>
+    </form>
+  </details>
 
   @if (loading() && categories().length === 0) {
     <p role="status">Loading categories...</p>
@@ -42,6 +45,7 @@
     <p>No categories are available yet.</p>
   } @else {
     <div class="admin-list">
+      <h3 class="list-heading">Category List <span>({{ categories().length }})</span></h3>
       @for (category of categories(); track category.id) {
         <article class="admin-list-row">
           <div>
@@ -54,7 +58,7 @@
             <button
               type="button"
               class="btn btn-secondary"
-              (click)="editCategory(category, adminPage, categoryNameInput)"
+              (click)="editCategory(category, adminPage, categoryFormAccordion, categoryNameInput)"
               [disabled]="loading()"
             >Edit</button>
             @if (category.is_active && confirmingDeleteId !== category.id) {

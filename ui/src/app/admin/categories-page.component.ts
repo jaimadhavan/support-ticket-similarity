@@ -41,23 +41,29 @@ export class CategoriesPageComponent implements OnInit {
     });
   }
 
-  editCategory(category: Category, page?: HTMLElement, nameInput?: HTMLInputElement) {
+  editCategory(category: Category, page?: HTMLElement, accordion?: HTMLDetailsElement, nameInput?: HTMLInputElement) {
     this.editingId = category.id;
     this.categoryName = category.name;
     this.message.set('');
     this.error.set('');
+    if (accordion) {
+      accordion.open = true;
+    }
     if (page) {
       page.scrollTop = 0;
     }
     nameInput?.focus();
   }
 
-  cancelEdit() {
+  cancelEdit(accordion?: HTMLDetailsElement) {
     this.editingId = null;
     this.categoryName = '';
+    if (accordion) {
+      accordion.open = false;
+    }
   }
 
-  saveCategory() {
+  saveCategory(accordion?: HTMLDetailsElement) {
     const name = this.categoryName.trim();
     if (!name) {
       this.error.set('Enter a category name.');
@@ -73,7 +79,7 @@ export class CategoriesPageComponent implements OnInit {
     request.subscribe({
       next: () => {
         this.message.set(this.editingId === null ? 'Category added.' : 'Category updated.');
-        this.cancelEdit();
+        this.cancelEdit(accordion);
         this.loadCategories();
       },
       error: error => {

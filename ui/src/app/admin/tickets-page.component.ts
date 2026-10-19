@@ -106,15 +106,21 @@ export class TicketsPageComponent implements OnInit {
     return active;
   }
 
-  startAdd() {
+  startAdd(accordion?: HTMLDetailsElement) {
     this.editingTicketId = null;
     this.form = createEmptyForm();
     this.error.set('');
     this.message.set('');
+    if (accordion) {
+      accordion.open = false;
+    }
   }
 
-  editTicket(ticket: ManagedTicket, page?: HTMLElement, ticketIdInput?: HTMLInputElement) {
+  editTicket(ticket: ManagedTicket, page?: HTMLElement, accordion?: HTMLDetailsElement, ticketIdInput?: HTMLInputElement) {
     this.editingTicketId = ticket.ticket_id;
+    if (accordion) {
+      accordion.open = true;
+    }
     this.form = {
       ticket_id: ticket.ticket_id,
       category_id: ticket.category_id,
@@ -133,11 +139,11 @@ export class TicketsPageComponent implements OnInit {
     ticketIdInput?.focus();
   }
 
-  cancelEdit() {
-    this.startAdd();
+  cancelEdit(accordion?: HTMLDetailsElement) {
+    this.startAdd(accordion);
   }
 
-  saveTicket() {
+  saveTicket(accordion?: HTMLDetailsElement) {
     if (this.form.category_id === null) {
       this.error.set('Select a category before saving the ticket.');
       return;
@@ -166,7 +172,7 @@ export class TicketsPageComponent implements OnInit {
     request.subscribe({
       next: () => {
         const successMessage = this.editingTicketId ? 'Ticket updated successfully.' : 'Ticket added successfully.';
-        this.startAdd();
+        this.startAdd(accordion);
         this.message.set(successMessage);
         this.refreshData();
       },

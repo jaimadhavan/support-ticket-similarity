@@ -1,7 +1,7 @@
 <div class="container">
   <header>
-    <h1>Support Ticket Similarity Search</h1>
-    <p>Find similar resolved tickets by keyword search</p>
+    <h1>Support Ticket Management</h1>
+    <p>Manage and search support tickets</p>
     <label class="role-selector">
       User role
       <select aria-label="User role" [ngModel]="userRole()" (ngModelChange)="changeUserRole($event)">
@@ -58,6 +58,7 @@
       <section>
         <header class="search-heading">
           <h2>Ticket Similarity Search</h2>
+          <p>Find similar resolved tickets by keyword search</p>
         </header>
       </section>
       <div class="search-box">
