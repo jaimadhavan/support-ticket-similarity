@@ -22,7 +22,7 @@ A full-stack support workflow prototype that helps agents find relevant, resolve
 
 ## Run locally
 
-Requirements: Node.js, npm, and PostgreSQL.
+Requirements: Node.js v22+, angular v22.2.0, npm, and PostgreSQL.
 
 1. Create a PostgreSQL database, for example `supportagent`.
 2. Create `support-ticket-management/backend/.env` with local database credentials:
@@ -85,4 +85,4 @@ The fixture-based backend checks cover representative login, chart, billing, and
 
 ## Scope and security
 
-This is an agent-assisted prototype, not an automated ticketing integration. Data is synthetic and search is lexical, so paraphrases may be missed. The Admin role is only a UI selector: the API does not enforce authentication or authorization. Do not expose this application to untrusted users without server-side access controls, auditing, and operational safeguards.
+This is an agent-assisted prototype, not an automated ticketing integration. Data is synthetic. The Admin role is only a UI selector: the API does not enforce authentication or authorization. 

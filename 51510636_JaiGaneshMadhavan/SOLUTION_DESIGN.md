@@ -39,8 +39,6 @@ For search, the API removes stop words and duplicate terms, queries subject, des
 
 ## Validation and limitations
 
-Current automated checks include Angular UI tests and backend fixture tests. Fixtures exercise representative login, chart, duplicate-charge, and unfamiliar Snowflake searches, plus historical-load summary accounting. Search acceptance tests simulate term overlap against fixtures; they do not execute PostgreSQL queries or establish real-world precision, recall, or latency.
-
 The prototype has synthetic data, no live ticket-system ingestion, no authentication, and no database integration/performance evaluation. Search relevance is based on term overlap and may miss differently worded but related issues. There is no production service-level or scale guarantee.
 
 ## Recommended next steps
