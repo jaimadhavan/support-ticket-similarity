@@ -1,7 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
+import { provideRouter, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { App } from './app';
+import { routes } from './app.routes';
 import { TicketService } from './services/ticket.service';
 
 describe('App', () => {
@@ -9,6 +11,7 @@ describe('App', () => {
     await TestBed.configureTestingModule({
       imports: [App],
       providers: [
+        provideRouter(routes),
         {
           provide: TicketService,
           useValue: {
@@ -85,6 +88,7 @@ describe('App', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.componentInstance.changeUserRole('Admin');
+    fixture.detectChanges();
 
     for (const page of ['search', 'categories', 'tickets', 'historical'] as const) {
       fixture.componentInstance.navigateTo(page);
@@ -112,6 +116,50 @@ describe('App', () => {
     fixture.detectChanges();
     expect(fixture.componentInstance.activePage()).toBe('search');
     expect(fixture.nativeElement.textContent).not.toContain('Manage Tickets');
+  });
+
+  it('navigates menu links to distinct page routes and tracks browser navigation', async () => {
+    TestBed.overrideProvider(TicketService, {
+      useValue: {
+        getHistoricalTicketAvailability: () => of({ count: 1, resolvedCount: 1 }),
+        getCategories: () => of({ categories: [] }),
+        getManagedTickets: () => of({ tickets: [] }),
+        searchTickets: () => of({ tickets: [], matchStatus: 'no_good_match' }),
+        loadHistoricalTickets: () => of({}),
+        removeHistoricalTickets: () => of({})
+      }
+    });
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.componentInstance.changeUserRole('Admin');
+    fixture.detectChanges();
+
+    const router = TestBed.inject(Router);
+    for (const page of ['categories', 'tickets', 'historical', 'search'] as const) {
+      const link = fixture.nativeElement.querySelector(`a[href="/${page}"]`) as HTMLAnchorElement;
+      link.click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(router.url).toBe(`/${page}`);
+      expect(fixture.componentInstance.activePage()).toBe(page);
+      expect(fixture.nativeElement.querySelector(`a[href="/${page}"]`)?.getAttribute('aria-current'))
+        .toBe('page');
+    }
+  });
+
+  it('redirects direct admin-route access to search for Support Agents', async () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const router = TestBed.inject(Router);
+    await router.navigateByUrl('/tickets');
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(router.url).toBe('/search');
+    expect(fixture.componentInstance.activePage()).toBe('search');
   });
 
   it('should explain when no resolved tickets are available and disable search', async () => {

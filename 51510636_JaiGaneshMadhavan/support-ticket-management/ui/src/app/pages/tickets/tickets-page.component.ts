@@ -179,7 +179,7 @@ export class TicketsPageComponent implements OnDestroy, OnInit {
     this.activeTab = 'list';
   }
 
-  editTicket(ticket: ManagedTicket, content?: HTMLElement) {
+  editTicket(ticket: ManagedTicket) {
     this.editingTicketId = ticket.ticket_id;
     this.focusTicketIdOnRender = true;
     this.activeTab = 'form';
@@ -194,9 +194,6 @@ export class TicketsPageComponent implements OnDestroy, OnInit {
       tags: ticket.tags.join(', ')
     };
     this.clearFeedback();
-    if (content) {
-      content.scrollTop = 0;
-    }
   }
 
   cancelEdit() {

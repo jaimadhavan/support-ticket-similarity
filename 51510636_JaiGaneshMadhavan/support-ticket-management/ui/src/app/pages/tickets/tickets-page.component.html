@@ -8,11 +8,13 @@
     @if (error()) {
       <div class="error-message dismissible-message" role="alert">
         <span>{{ error() }}</span>
+        <button type="button" class="message-dismiss" aria-label="Dismiss message" (click)="dismissFeedback()">&times;</button>
       </div>
     }
     @if (message()) {
       <div class="success-message dismissible-message" role="status">
         <span>{{ message() }}</span>
+        <button type="button" class="message-dismiss" aria-label="Dismiss message" (click)="dismissFeedback()">&times;</button>
       </div>
     }
 
@@ -102,7 +104,7 @@
 
     @if (activeTab === 'list') {
       <section id="ticket-list-panel" class="admin-tab-panel list-tab-panel" role="tabpanel" aria-labelledby="ticket-list-tab" tabindex="0">
-        <div class="admin-list-scroll-area" #ticketListContent>
+        <div class="admin-list-content">
           @if (loading() && tickets().length === 0) {
             <p role="status">Loading tickets...</p>
           } @else if (tickets().length === 0) {
@@ -120,7 +122,7 @@
                     <button type="button" class="btn btn-secondary" (click)="toggleTicketDetails(ticket.ticket_id)">
                       {{ expandedTicketId() === ticket.ticket_id ? 'View less' : 'View more' }}
                     </button>
-                    <button type="button" class="btn btn-secondary" (click)="editTicket(ticket, ticketListContent)" [disabled]="loading()">Edit</button>
+                    <button type="button" class="btn btn-secondary" (click)="editTicket(ticket)" [disabled]="loading()">Edit</button>
                     @if (confirmingDeleteId !== ticket.ticket_id) {
                       <button type="button" class="btn btn-remove" (click)="confirmingDeleteId = ticket.ticket_id" [disabled]="loading()">Delete</button>
                     }

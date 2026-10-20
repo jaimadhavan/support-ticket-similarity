@@ -1,28 +1,28 @@
 <nav class="app-navigation" aria-label="Application pages">
-  <button
-    type="button"
+  <a
     class="nav-button"
+    [routerLink]="['/search']"
     [class.active]="activePage === 'search'"
-    (click)="pageChange.emit('search')"
-  >Ticket Similarity Search</button>
+    [attr.aria-current]="activePage === 'search' ? 'page' : null"
+  >Ticket Similarity Search</a>
   @if (userRole === 'Admin') {
-    <button
-      type="button"
+    <a
       class="nav-button"
+      [routerLink]="['/categories']"
       [class.active]="activePage === 'categories'"
-      (click)="pageChange.emit('categories')"
-    >Manage Ticket Categories</button>
-    <button
-      type="button"
+      [attr.aria-current]="activePage === 'categories' ? 'page' : null"
+    >Manage Ticket Categories</a>
+    <a
       class="nav-button"
+      [routerLink]="['/tickets']"
       [class.active]="activePage === 'tickets'"
-      (click)="pageChange.emit('tickets')"
-    >Manage Tickets</button>
-    <button
-      type="button"
+      [attr.aria-current]="activePage === 'tickets' ? 'page' : null"
+    >Manage Tickets</a>
+    <a
       class="nav-button"
+      [routerLink]="['/historical']"
       [class.active]="activePage === 'historical'"
-      (click)="pageChange.emit('historical')"
-    >Manage Historical Tickets</button>
+      [attr.aria-current]="activePage === 'historical' ? 'page' : null"
+    >Manage Historical Tickets</a>
   }
 </nav>

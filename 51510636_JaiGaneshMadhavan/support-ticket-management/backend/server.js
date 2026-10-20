@@ -1,8 +1,6 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const fs = require('fs');
-const path = require('path');
 const ticketsRoute = require('./routes/tickets.route');
 const categoriesRoute = require('./routes/categories.route');
 const managedTicketsRoute = require('./routes/managed-tickets.route');

@@ -1,12 +1,31 @@
 # Support Ticket Similarity Assistant
 
-This folder contains the case-study design, run guide, and `case-study-codebase`, a refreshed source-only runnable snapshot. The canonical implementation remains in the repository's `backend/`, `ui/`, `starter_kit/`, and `style-specification/` directories. The archive excludes dependencies, generated build output, and local environment files.
+## Overview
+
+A full-stack support workflow prototype that helps agents find relevant, resolved tickets and reuse their resolutions. The application combines an Angular single-page UI, an Express API, and PostgreSQL. The runnable source snapshot is in [`support-ticket-management/`](./support-ticket-management/).
+
+## Capabilities
+
+- Search resolved tickets by keywords or issue description. Results include matched terms and resolution notes; weak matches are withheld.
+- Manage ticket categories and ticket records, with status and category validation.
+- Load sample historical tickets with validation, duplicate handling, and an insertion summary; remove them only after confirmation.
+- View overall and resolved-ticket counts separately. Search remains unavailable if no resolved tickets exist.
+- Navigate to Search, Categories, Tickets, and Historical Tickets at `/search`, `/categories`, `/tickets`, and `/historical`. Admin menus are shown only in the Admin UI role.
+- Dismiss page feedback manually or let it clear automatically after five seconds. Content uses normal browser scrolling.
+
+## Technology and structure
+
+- **UI:** Angular standalone components, Angular Router, TypeScript, and RxJS.
+- **API:** Node.js, Express, and `pg`.
+- **Data:** PostgreSQL `tickets` and `categories` tables. Tickets reference categories by `category_id`; indexes support ticket lookup, tags, and full-text search.
+- **Source:** `support-ticket-management/ui`, `backend`, `starter_kit`, and `style-specification`.
 
 ## Run locally
 
-Requirements: Node.js v18+, npm, angular v22.2.0 and PostgreSQL v18.
+Requirements: Node.js, npm, and PostgreSQL.
 
-1. Extract the 51510636_JaiGaneshMadhavan.zip file. From the extracted `support-ticket-management` folder, create a PostgreSQL database (for example, `supportagent`) and configure `backend/.env`:
+1. Create a PostgreSQL database, for example `supportagent`.
+2. Create `support-ticket-management/backend/.env` with local database credentials:
 
    ```dotenv
    DB_USER_NAME=<database-user>
@@ -17,7 +36,7 @@ Requirements: Node.js v18+, npm, angular v22.2.0 and PostgreSQL v18.
    PORT=3000
    ```
 
-2. In one terminal, install and start the API:
+3. In a terminal, initialize and start the API:
 
    ```powershell
    Set-Location support-ticket-management\backend
@@ -26,7 +45,7 @@ Requirements: Node.js v18+, npm, angular v22.2.0 and PostgreSQL v18.
    npm start
    ```
 
-3. In another terminal, install and start the Angular UI:
+4. In another terminal, start the UI:
 
    ```powershell
    Set-Location support-ticket-management\ui
@@ -34,47 +53,36 @@ Requirements: Node.js v18+, npm, angular v22.2.0 and PostgreSQL v18.
    npm start
    ```
 
-4. Open `http://localhost:4200`, select **Admin** and **Manage Historical Tickets**, then load the seed tickets. The page reports the total tickets across all statuses. Select **Ticket Similarity Search** and search for an issue description or terms; only resolved precedents are returned, with matching terms and resolutions.
+5. Open `http://localhost:4200`. Choose **Admin → Manage Historical Tickets** to load the sample records in `starter_kit/data/tickets.json`, then return to Search.
 
-## What the prototype does
+## API surface
 
-- Express API with PostgreSQL-backed full-text and tag search.
-- Seed loader validates records, ignores duplicate ticket IDs, and reports inserted, invalid, duplicate, and failed counts.
-- Search returns resolved tickets only. Multi-term queries require at least TWO distinct meaningful terms; a single descriptive term can match directly.
-- Results show their matched terms; weak/no matches produce a no-strong-match message.
-- The availability API provides both total ticket count and resolved-ticket count. Historical management shows the total across every status, while Search is enabled only when resolved tickets exist and availability was successfully checked. Counts refresh on startup, when opening Search or historical management, and after historical load/delete operations.
-- Queries containing only common words (for example, `the`) show an input-specific prompt to enter product, feature, or error terms; network failures are reported separately.
-- Search, category, ticket, and historical-ticket operation feedback will be automatically clears after five seconds. Historical load/delete results include counts and appear inline on the Historical Tickets page. Deleting historical tickets requires explicit confirmation that states the all-status total; removal is disabled when the table is empty.
-- The role selector defaults to **Support Agent**; selecting **Admin** reveals category, ticket, and historical-ticket management. Categories can be added, renamed, or deactivated (soft delete). Tickets can be added, edited, or permanently deleted, with status values `new`, `inprogress`, and `resolved`.
-- Historical-ticket management uses a compact view with load/remove actions and an all-status ticket count. Category and ticket page headings and supporting descriptions remain fixed above their independently scrollable content. Both Admin pages use accessible Add/Edit and List tabs, with List selected by default; editing switches to the form tab, and cancel/save returns to List. Ticket/category records scroll within their List tab, while ticket pagination remains fixed at the bottom of that tab. On Manage Tickets, the Records per page selector is positioned on the left side of the pagination bar, with page navigation on the right. Compact vertical spacing preserves room for pagination. Ticket management shows inline confirmation after adding or editing; it supports page sizes of 10, 20, 50, and 100, plus a per-ticket expanded details view. Resolution notes are optional for new and in-progress tickets, and required when a ticket is marked resolved. Admin forms and actions follow the Search page's compact visual style.
-- The application viewport avoids browser-level scrolling; the Search results list and Admin page content scroll in their own regions, leaving each section heading visible.
-- The shared application header uses an enterprise navy-and-teal brand treatment, responsive product identity, and an accessible workspace-role selector.
-- The Search-page style reference is in `style-specification/TICKET_SIMILARITY_SEARCH.md`.
-- Tickets reference `categories.id` through `category_id`; there is no text category column in the tickets table. Historical loading inserts unique category names when needed, then stores each category ID on its ticket.
-- Database initialization creates the categories table and migrates existing category values before dropping the old ticket category column. Rerun `npm run init-db` on an existing database before using the Admin pages.
-- The role selector is UI-only and provides no authentication or API authorization. Admin API routes are callable without selecting Admin; this is a demo convenience, not a security boundary.
-- No AI service or external model is required.
+| Method and path | Purpose |
+|---|---|
+| `GET /api/tickets/availability` | Returns total and resolved ticket counts |
+| `POST /api/tickets/loadHistoricalTickets` | Validates and loads sample tickets; reports inserted, invalid, duplicate, and failed counts |
+| `DELETE /api/tickets/removeHistoricalTickets` | Removes historical ticket records |
+| `GET /api/tickets/search?keyword=...&limit=...` | Searches resolved tickets; limit is optional and capped by the API |
+| `GET/POST/PUT/DELETE /api/categories[/:categoryId]` | List, create, rename, or deactivate categories |
+| `GET/POST /api/admin/tickets` | List or create managed tickets |
+| `PUT/DELETE /api/admin/tickets/:ticketId` | Update or permanently delete a managed ticket |
 
-## Checks
+Search ignores common terms, requires sufficient meaningful-term overlap, and uses PostgreSQL ranking for ordering—not as a confidence score. Category deletion is a soft deactivation; ticket deletion is permanent.
 
-From the repository root:
+## Validation
+
+From the project snapshot:
 
 ```powershell
-Set-Location backend
+Set-Location support-ticket-management\backend
 npm test
 Set-Location ..\ui
 npm test -- --watch=false
 npm run build
 ```
 
-The backend fixture checks expect NT-1 → T-1001, NT-2 → T-1201, NT-3 → T-1303, and no strong result for NT-4 (Snowflake). They simulate term overlap and load-summary behavior; they are not PostgreSQL integration tests. UI tests also cover the distinction between all-status and resolved counts, resolved-only search gating, and page-scoped historical feedback.
+The fixture-based backend checks cover representative login, chart, billing, and no-strong-match cases. They do not replace PostgreSQL integration or production relevance tests.
 
-## Scope and known limitations
+## Scope and security
 
-- Search is manually initiated; there is no live ticket-system integration or automatic incoming-ticket workflow.
-- The dataset is small and synthetic. Keyword matching can miss semantically similar wording; the threshold and stop-word list are heuristic, not calibrated confidence.
-- Ranking is for ordering only. No production latency, scaling, or relevance guarantees have been established.
-- The prototype has no authentication/authorization. Ticket/category management and historical-ticket deletion are exposed as API/UI operations and must not be exposed to untrusted users.
-- Before production use: validate on labeled real tickets, add database-backed integration/performance tests, establish operational ownership and access controls, and define monitoring and ingestion requirements.
-
-See [SOLUTION_DESIGN.md](./SOLUTION_DESIGN.md) for the problem framing, assumptions, architecture, trade-offs, and proposed next steps. The root [README.md](../README.md) contains the complete API and database reference.
+This is an agent-assisted prototype, not an automated ticketing integration. Data is synthetic and search is lexical, so paraphrases may be missed. The Admin role is only a UI selector: the API does not enforce authentication or authorization. Do not expose this application to untrusted users without server-side access controls, auditing, and operational safeguards.

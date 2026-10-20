@@ -1,18 +1,25 @@
-/* You can add global styles to this file, and also import other style files */
-
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
 
-html,
+html {
+  width: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
 body,
 app-root {
   width: 100%;
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+body {
+  margin: 0;
 }
 
 app-root {
@@ -23,12 +30,26 @@ app-root {
   margin:0;
 }
 
-.btn-remove {
-  background: #dc2626;
-  border-color: #dc2626;
+.message-dismiss {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin: -0.25rem -0.25rem 0 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: currentColor;
+  cursor: pointer;
 }
 
-.btn-remove:hover:not(:disabled) {
-  background: #b91c1c;
-  border-color: #b91c1c;
+.message-dismiss:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.message-dismiss:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
 }

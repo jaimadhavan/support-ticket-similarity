@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { HistoricalLoadSummary, HistoricalRemovalSummary, TicketSearchResponse } from '../app.models';
 
 export interface Category {
   id: number;
@@ -75,21 +76,21 @@ export class TicketService {
     );
   }
 
-  loadHistoricalTickets(): Observable<any> {
-    return this.http.post(
+  loadHistoricalTickets(): Observable<HistoricalLoadSummary> {
+    return this.http.post<HistoricalLoadSummary>(
       `${this.apiUrl}/loadHistoricalTickets`,
       {}
     );
   }
 
-  removeHistoricalTickets(): Observable<any> {
-    return this.http.delete(
+  removeHistoricalTickets(): Observable<HistoricalRemovalSummary> {
+    return this.http.delete<HistoricalRemovalSummary>(
       `${this.apiUrl}/removeHistoricalTickets`
     );
   }
 
-  searchTickets(keyword: string, resultLimit: number): Observable<any> {
-    return this.http.get(
+  searchTickets(keyword: string, resultLimit: number): Observable<TicketSearchResponse> {
+    return this.http.get<TicketSearchResponse>(
       `${this.apiUrl}/search?keyword=${encodeURIComponent(keyword)}&limit=${resultLimit}`
     );
   }

@@ -58,11 +58,13 @@
   @if (error) {
     <div class="error-message historical-message" role="alert">
       <span>{{ error }}</span>
+      <button type="button" class="message-dismiss" aria-label="Dismiss message" (click)="dismissFeedback.emit()">&times;</button>
     </div>
   }
   @if (successMessage) {
     <div class="success-message historical-message" role="status">
       <span>{{ successMessage }}</span>
+      <button type="button" class="message-dismiss" aria-label="Dismiss message" (click)="dismissFeedback.emit()">&times;</button>
     </div>
   }
 </section>

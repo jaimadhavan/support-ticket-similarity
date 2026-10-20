@@ -1,6 +1,8 @@
 import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { HttpClientModule } from '@angular/common/http';
+import { NavigationEnd, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { TicketService } from './services/ticket.service';
 import { CategoriesPageComponent } from './pages/categories/categories-page.component';
 import { TicketsPageComponent } from './pages/tickets/tickets-page.component';
@@ -52,15 +54,22 @@ export class App implements OnDestroy, OnInit {
   matchStatus = signal<MatchStatus>(null);
   copiedTicketId = '';
   private feedbackTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly routeSubscription: Subscription;
 
-  constructor(private ticketService: TicketService) {}
+  constructor(private ticketService: TicketService, private router: Router) {
+    this.routeSubscription = this.router.events.subscribe(event => {
+      if (event instanceof NavigationEnd) {
+        this.syncPageFromRoute();
+      }
+    });
+  }
 
   changeUserRole(role: UserRole) {
     this.userRole.set(role);
     this.clearFeedback();
     if (role === 'Support Agent') {
-      this.activePage.set('search');
       this.removeConfirmationOpen.set(false);
+      this.navigateTo('search');
     }
   }
 
@@ -70,11 +79,12 @@ export class App implements OnDestroy, OnInit {
     }
     if (page !== this.activePage()) {
       this.clearFeedback();
+      this.activePage.set(page);
+      if (page === 'search' || page === 'historical') {
+        this.refreshHistoricalTicketAvailability();
+      }
     }
-    this.activePage.set(page);
-    if (page === 'search' || page === 'historical') {
-      this.refreshHistoricalTicketAvailability();
-    }
+    void this.router.navigateByUrl(`/${page}`);
   }
 
   ngOnInit() {
@@ -83,6 +93,28 @@ export class App implements OnDestroy, OnInit {
 
   ngOnDestroy() {
     this.clearFeedbackTimer();
+    this.routeSubscription.unsubscribe();
+  }
+
+  private syncPageFromRoute() {
+    const path = this.router.url.split(/[?#]/, 1)[0].replace(/^\/|\/$/g, '');
+    const pages: AppPage[] = ['search', 'categories', 'tickets', 'historical'];
+    if (!pages.includes(path as AppPage)) {
+      return;
+    }
+
+    const page = path as AppPage;
+    if (page !== 'search' && this.userRole() !== 'Admin') {
+      this.navigateTo('search');
+      return;
+    }
+    if (page !== this.activePage()) {
+      this.clearFeedback();
+      this.activePage.set(page);
+      if (page === 'search' || page === 'historical') {
+        this.refreshHistoricalTicketAvailability();
+      }
+    }
   }
 
   dismissFeedback() {

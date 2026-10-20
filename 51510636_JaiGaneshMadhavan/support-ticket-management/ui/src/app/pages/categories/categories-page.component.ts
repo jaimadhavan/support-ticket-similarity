@@ -107,15 +107,12 @@ export class CategoriesPageComponent implements OnDestroy, OnInit {
     nextButton?.focus();
   }
 
-  editCategory(category: Category, content?: HTMLElement) {
+  editCategory(category: Category) {
     this.focusCategoryNameOnRender = true;
     this.activeTab = 'form';
     this.editingId = category.id;
     this.categoryName = category.name;
     this.clearFeedback();
-    if (content) {
-      content.scrollTop = 0;
-    }
   }
 
   cancelEdit() {

@@ -8,11 +8,13 @@
     @if (error()) {
       <div class="error-message dismissible-message" role="alert">
         <span>{{ error() }}</span>
-       </div>
+        <button type="button" class="message-dismiss" aria-label="Dismiss message" (click)="dismissFeedback()">&times;</button>
+      </div>
     }
     @if (message()) {
       <div class="success-message dismissible-message" role="status">
-        <span>{{ message() }}</span>        
+        <span>{{ message() }}</span>
+        <button type="button" class="message-dismiss" aria-label="Dismiss message" (click)="dismissFeedback()">&times;</button>
       </div>
     }
 
@@ -70,7 +72,7 @@
 
     @if (activeTab === 'list') {
       <section id="category-list-panel" class="admin-tab-panel list-tab-panel" role="tabpanel" aria-labelledby="category-list-tab" tabindex="0">
-        <div class="admin-list-scroll-area" #categoryListContent>
+        <div class="admin-list-content">
           @if (loading() && categories().length === 0) {
             <p role="status">Loading categories...</p>
           } @else if (categories().length === 0) {
@@ -89,7 +91,7 @@
                     <button
                       type="button"
                       class="btn btn-secondary"
-                      (click)="editCategory(category, categoryListContent)"
+                      (click)="editCategory(category)"
                       [disabled]="loading()"
                     >Edit</button>
                     @if (category.is_active && confirmingDeleteId !== category.id) {
