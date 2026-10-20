@@ -1,0 +1,23 @@
+<header class="application-header">
+  <div class="brand-lockup">
+    <span class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 32 32" focusable="false">
+        <path d="M8 5.5h16a2 2 0 0 1 2 2v17a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-17a2 2 0 0 1 2-2Z" />
+        <path d="M11 11h10M11 16h10M11 21h6" />
+        <path d="M23 5.5v4" />
+      </svg>
+    </span>
+    <div class="brand-copy">
+      <span class="brand-eyebrow">Support Operations</span>
+      <h1>Support Ticket Management</h1>
+      <p>Find trusted resolutions. Support every customer with confidence.</p>
+    </div>
+  </div>
+  <label class="role-selector">
+    <span class="role-label">Workspace role</span>
+    <select aria-label="User role" [ngModel]="userRole" (ngModelChange)="userRoleChange.emit($event)">
+      <option value="Support Agent">Support Agent</option>
+      <option value="Admin">Admin</option>
+    </select>
+  </label>
+</header>

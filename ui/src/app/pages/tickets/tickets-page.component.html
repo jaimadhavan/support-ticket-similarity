@@ -8,21 +8,11 @@
     @if (error()) {
       <div class="error-message dismissible-message" role="alert">
         <span>{{ error() }}</span>
-        <button type="button" class="message-dismiss" aria-label="Dismiss message" (click)="dismissFeedback()">
-          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-            <path d="m4 4 8 8M12 4l-8 8" />
-          </svg>
-        </button>
       </div>
     }
     @if (message()) {
       <div class="success-message dismissible-message" role="status">
         <span>{{ message() }}</span>
-        <button type="button" class="message-dismiss" aria-label="Dismiss message" (click)="dismissFeedback()">
-          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-            <path d="m4 4 8 8M12 4l-8 8" />
-          </svg>
-        </button>
       </div>
     }
 
@@ -53,11 +43,11 @@
       <section id="ticket-form-panel" class="admin-tab-panel form-tab-panel" role="tabpanel" aria-labelledby="ticket-form-tab" tabindex="0">
         <form class="admin-form ticket-form" (ngSubmit)="saveTicket()">
           <div class="form-grid">
-            <label>
+            <label class='form-field'>
               Ticket ID
               <input #ticketIdInput name="ticketId" [(ngModel)]="form.ticket_id" required maxlength="50" />
             </label>
-            <label>
+            <label class='form-field'>
               Category
               <select name="category" [(ngModel)]="form.category_id" required>
                 <option [ngValue]="null" disabled>Select category</option>
@@ -66,7 +56,7 @@
                 }
               </select>
             </label>
-            <label>
+            <label class='form-field'>
               Status
               <select name="status" [(ngModel)]="form.status" required>
                 <option value="new">New</option>
@@ -74,23 +64,23 @@
                 <option value="resolved">Resolved</option>
               </select>
             </label>
-            <label>
+            <label class='form-field'>
               Created date
               <input name="createdAt" type="date" [(ngModel)]="form.created_at" required />
             </label>
-            <label class="wide-field">
+            <label class='form-field'>
               Subject
               <input name="subject" [(ngModel)]="form.subject" required />
             </label>
-            <label class="wide-field">
+            <label class='form-field'>
               Description
               <textarea name="description" [(ngModel)]="form.description" rows="3" required></textarea>
             </label>
-            <label class="wide-field">
+            <label class='form-field'>
               Resolution notes{{ form.status === 'resolved' ? ' (required for resolved tickets)' : ' (optional until resolved)' }}
               <textarea name="resolution" [(ngModel)]="form.resolution_notes" rows="3" [required]="form.status === 'resolved'"></textarea>
             </label>
-            <label class="wide-field">
+            <label class='form-field'>
               Tags (comma-separated)
               <input name="tags" [(ngModel)]="form.tags" placeholder="login, password-reset" />
             </label>
@@ -123,7 +113,7 @@
                 <article class="admin-list-row ticket-list-row">
                   <div class="ticket-list-details">
                     <strong>{{ ticket.ticket_id }} — {{ ticket.subject }}</strong>
-                    <span>{{ ticket.category }} · {{ ticket.status }} · {{ ticket.created_at | date:'mediumDate' }}</span>
+                    <!-- <span>{{ ticket.category }} · {{ ticket.status }} · {{ ticket.created_at | date:'mediumDate' }}</span> -->
                     <span>{{ ticket.description }}</span>
                   </div>
                   <div class="row-actions">

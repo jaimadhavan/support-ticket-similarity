@@ -1,32 +1,27 @@
 import { Component, OnDestroy, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { HttpClientModule } from '@angular/common/http';
 import { TicketService } from './services/ticket.service';
-import { CategoriesPageComponent } from './admin/categories-page.component';
-import { TicketsPageComponent } from './admin/tickets-page.component';
-
-type UserRole = 'Support Agent' | 'Admin';
-type AppPage = 'search' | 'categories' | 'tickets' | 'historical';
-
-interface Ticket {
-  ticket_id: string;
-  category: string;
-  subject: string;
-  description: string;
-  resolution_notes: string;
-  tags: string[];
-  created_at: string;
-  status: string;
-  matchCount?: number;
-  matchedWords?: string[];
-}
+import { CategoriesPageComponent } from './pages/categories/categories-page.component';
+import { TicketsPageComponent } from './pages/tickets/tickets-page.component';
+import { HistoricalPageComponent } from './pages/historical/historical-page.component';
+import { SearchPageComponent } from './pages/search/search-page.component';
+import { AppPage, MatchStatus, Ticket, UserRole } from './app.models';
+import { ApplicationHeaderComponent } from './shared/application-header.component';
+import { ApplicationNavigationComponent } from './shared/application-navigation.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule, CategoriesPageComponent, TicketsPageComponent],
+  imports: [
+    HttpClientModule,
+    ApplicationHeaderComponent,
+    ApplicationNavigationComponent,
+    SearchPageComponent,
+    CategoriesPageComponent,
+    TicketsPageComponent,
+    HistoricalPageComponent
+  ],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
@@ -46,7 +41,7 @@ export class App implements OnDestroy, OnInit {
   error = signal('');
   successMessage = signal('');
   searchPerformed = signal(false);
-  matchStatus = signal<'good_match' | 'no_good_match' | null>(null);
+  matchStatus = signal<MatchStatus>(null);
   copiedTicketId = '';
   private feedbackTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -169,7 +164,8 @@ export class App implements OnDestroy, OnInit {
 
   }
 
-  onKeywordChange() {
+  onKeywordChange(keyword: string = this.keyword) {
+    this.keyword = keyword;
     this.searchPerformed.set(false);
     this.matchStatus.set(null);
     this.tickets.set([]);

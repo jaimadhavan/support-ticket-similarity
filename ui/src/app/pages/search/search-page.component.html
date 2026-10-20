@@ -1,0 +1,116 @@
+@if (availabilityLoading) {
+  <div class="availability-message" role="status">Checking historical ticket availability...</div>
+} @else if (availabilityError) {
+  <div class="error-message" role="alert">
+    {{ availabilityError }}
+    <button class="btn btn-secondary" type="button" (click)="retryAvailability.emit()">Retry</button>
+  </div>
+} @else if (resolvedTicketCount === 0) {
+  <div class="availability-message" role="status">
+    No resolved tickets are available for search yet. Load or resolve tickets to enable search.
+  </div>
+}
+
+<div class="search-section">
+  <section>
+    <header class="search-heading">
+      <h2>Ticket Similarity Search</h2>
+      <p>Find similar resolved tickets by keyword search</p>
+    </header>
+  </section>
+  <div class="search-box">
+    <input
+      type="text"
+      [ngModel]="keyword"
+      (ngModelChange)="keywordChange.emit($event)"
+      (keyup.enter)="search.emit()"
+      placeholder="Enter keyword or sentence (e.g., 'login password reset', 'billing invoice issue'...)"
+      class="search-input"
+    />
+    <select
+      [ngModel]="resultLimit"
+      (ngModelChange)="resultLimitChange.emit($event)"
+      class="limit-select"
+      title="Number of results to show"
+    >
+      <option [ngValue]="3">3 results</option>
+      <option [ngValue]="5">5 results</option>
+      <option [ngValue]="10">10 results</option>
+      <option [ngValue]="20">20 results</option>
+    </select>
+    <button
+      type="button"
+      (click)="search.emit()"
+      [disabled]="loading || removing || availabilityLoading || availabilityError !== '' || (resolvedTicketCount ?? 0) === 0"
+      class="btn btn-primary"
+    >
+      @if (loading) { Searching... } @else { Search }
+    </button>
+    <button type="button" (click)="clear.emit()" [disabled]="loading" class="btn btn-secondary">Clear</button>
+  </div>
+</div>
+
+@if (error) {
+  <div class="error-message dismissible-message" role="alert">
+    <span>{{ error }}</span>
+  </div>
+}
+@if (searchPerformed && matchStatus === 'no_good_match' && !loading && !error) {
+  <div class="no-results">
+    No strong match among resolved tickets for "{{ keyword }}". Try adding specific product or error details. Results are only shown when at least two meaningful terms match (or one descriptive term is searched).
+  </div>
+}
+@if (tickets.length > 0) {
+  <div class="results-section">
+    <h2>Results for "{{ keyword }}" ({{ tickets.length }} tickets)</h2>
+    <div class="tickets-list" role="region" aria-label="Search results" tabindex="0">
+      @for (ticket of tickets; track ticket.ticket_id; let i = $index) {
+        <div class="ticket-card">
+          <div class="ticket-serial">{{ i + 1 }}</div>
+          <div class="ticket-header">
+            <div class="ticket-field">
+              <span class="field-label">Ticket#:</span>
+              <span class="ticket-id ticket-value">{{ ticket.ticket_id }}</span>
+            </div>
+            <div class="ticket-field">
+              <span class="field-label">Category:</span>
+              <span class="ticket-category ticket-value">{{ ticket.category }}</span>
+            </div>
+            <div class="ticket-field">
+              <span class="field-label">Status:</span>
+              <span class="ticket-status ticket-value">{{ ticket.status }}</span>
+            </div>
+          </div>
+          <h3 class="ticket-subject">{{ ticket.subject }}</h3>
+          @if (ticket.matchedWords?.length) {
+            <div class="matched-words">
+              <strong>Why this matched ({{ ticket.matchCount }} terms)</strong>
+              <div class="matched-words-list">
+                @for (word of ticket.matchedWords; track word) {
+                  <span class="matched-word">{{ word }}</span>
+                }
+              </div>
+            </div>
+          }
+          <div class="ticket-section">
+            <strong>Description:</strong>
+            <p>{{ ticket.description }}</p>
+          </div>
+          <div class="ticket-section resolution-section">
+            <strong>Resolution:</strong>
+            <button
+              type="button"
+              class="copy-button"
+              (click)="copyResolution.emit({ text: ticket.resolution_notes, event: $event })"
+              [class.copied]="copiedTicketId === ticket.ticket_id"
+              title="Copy resolution to clipboard"
+            >
+              @if (copiedTicketId === ticket.ticket_id) { ✓ Copied } @else { 📋 Copy }
+            </button>
+            <p>{{ ticket.resolution_notes }}</p>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+}

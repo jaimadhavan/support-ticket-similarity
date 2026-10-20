@@ -1,7 +1,7 @@
 import { Component, ElementRef, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Category, ManagedTicket, TicketService, TicketStatus } from '../services/ticket.service';
+import { Category, ManagedTicket, TicketService, TicketStatus } from '../../services/ticket.service';
 
 type TicketForm = Omit<ManagedTicket, 'tags' | 'status' | 'category' | 'category_id'> & {
   category_id: number | null;
@@ -16,7 +16,7 @@ type AdminTab = 'form' | 'list';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './tickets-page.component.html',
-  styleUrl: './admin-pages.component.css'
+  styleUrl: '../shared/admin-pages.component.css'
 })
 export class TicketsPageComponent implements OnDestroy, OnInit {
   tickets = signal<ManagedTicket[]>([]);

@@ -1,7 +1,7 @@
 import { Component, ElementRef, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Category, TicketService } from '../services/ticket.service';
+import { Category, TicketService } from '../../services/ticket.service';
 
 type AdminTab = 'form' | 'list';
 
@@ -10,7 +10,7 @@ type AdminTab = 'form' | 'list';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './categories-page.component.html',
-  styleUrl: './admin-pages.component.css'
+  styleUrl: '../shared/admin-pages.component.css'
 })
 export class CategoriesPageComponent implements OnDestroy, OnInit {
   categories = signal<Category[]>([]);

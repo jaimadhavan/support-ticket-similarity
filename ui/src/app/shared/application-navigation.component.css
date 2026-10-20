@@ -1,0 +1,47 @@
+:host {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.app-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.nav-button {
+  padding: 0.45rem 0.65rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #fff;
+  color: #374151;
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.nav-button:hover {
+  background: #f3f4f6;
+}
+
+.nav-button.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .app-navigation {
+    flex-direction: column;
+  }
+
+  .nav-button {
+    text-align: left;
+  }
+}

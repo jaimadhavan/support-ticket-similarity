@@ -56,6 +56,47 @@ describe('App', () => {
     expect(compiled.textContent).not.toContain('Manage Historical Tickets');
   });
 
+  it('changes the workspace role through the extracted header component', async () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const roleSelector = fixture.nativeElement.querySelector('[aria-label="User role"]') as HTMLSelectElement;
+
+    roleSelector.value = 'Admin';
+    roleSelector.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.userRole()).toBe('Admin');
+    expect(fixture.nativeElement.textContent).toContain('Manage Tickets');
+  });
+
+  it('keeps one shared application header while switching between pages', async () => {
+    TestBed.overrideProvider(TicketService, {
+      useValue: {
+        getHistoricalTicketAvailability: () => of({ count: 1, resolvedCount: 1 }),
+        getCategories: () => of({ categories: [] }),
+        getManagedTickets: () => of({ tickets: [] }),
+        searchTickets: () => of({ tickets: [], matchStatus: 'no_good_match' }),
+        loadHistoricalTickets: () => of({}),
+        removeHistoricalTickets: () => of({})
+      }
+    });
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.componentInstance.changeUserRole('Admin');
+
+    for (const page of ['search', 'categories', 'tickets', 'historical'] as const) {
+      fixture.componentInstance.navigateTo(page);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelectorAll('app-application-header').length).toBe(1);
+      expect(fixture.nativeElement.querySelector('.application-header h1')?.textContent)
+        .toContain('Support Ticket Management');
+    }
+  });
+
   it('should show admin menus only after switching to Admin', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
@@ -216,7 +257,7 @@ describe('App', () => {
     fixture.componentInstance.changeUserRole('Admin');
     fixture.componentInstance.navigateTo('historical');
     fixture.detectChanges();
-    fixture.componentInstance.loadTickets();
+    (fixture.nativeElement.querySelector('.historical-actions .btn-load') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Tickets loaded successfully');

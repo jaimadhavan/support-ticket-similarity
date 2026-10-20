@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
-import { CategoriesPageComponent } from './categories-page.component';
-import { TicketsPageComponent } from './tickets-page.component';
+import { CategoriesPageComponent } from '../pages/categories/categories-page.component';
+import { TicketsPageComponent } from '../pages/tickets/tickets-page.component';
 import { TicketService } from '../services/ticket.service';
 
 describe('Admin management pages', () => {

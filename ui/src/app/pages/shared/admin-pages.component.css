@@ -57,6 +57,7 @@
   color: #666;
   font-size: 0.9rem;
   line-height: 1.6;
+  margin: 0;
 }
 
 .admin-form {
@@ -478,6 +479,17 @@
   border: 1px solid #bfdbfe;
   background: #eff6ff;
   color: #1e40af;
+}
+
+.message-dismiss{
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin: -0.25rem -0.25rem 0 0;
+  background: transparent;
 }
 
 @media (prefers-reduced-motion: reduce) {
