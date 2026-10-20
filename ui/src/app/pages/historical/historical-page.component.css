@@ -1,18 +1,13 @@
 :host {
-  display: flex;
-  flex: 1 1 0;
+  display: block;
   min-width: 0;
-  min-height: 0;
-  overflow: hidden;
 }
 
 .historical-page {
   width: 100%;
   min-width: 0;
-  min-height: 0;
   margin-top: 0.25rem;
   padding: 0.65rem;
-  overflow: auto;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   background: #f9fafb;
@@ -125,39 +120,6 @@
   border-color: #a7f3d0;
   background: #ecfdf5;
   color: #065f46;
-}
-
-.message-dismiss {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  margin: -0.25rem -0.25rem 0 0;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-  color: currentColor;
-  cursor: pointer;
-}
-
-.message-dismiss:hover {
-  background: rgba(0, 0, 0, 0.08);
-}
-
-.message-dismiss:focus-visible {
-  outline: 2px solid currentColor;
-  outline-offset: 1px;
-}
-
-.message-dismiss svg {
-  width: 1rem;
-  height: 1rem;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-width: 1.75;
 }
 
 .historical-message .btn {

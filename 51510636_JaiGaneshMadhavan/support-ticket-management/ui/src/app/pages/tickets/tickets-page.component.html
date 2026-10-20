@@ -1,0 +1,175 @@
+<section class="admin-page" #adminPage>
+  <header class="page-heading">
+    <h2>Manage Tickets</h2>
+    <p>Create and maintain ticket records. Status may be new, in progress, or resolved.</p>
+  </header>
+
+  <div class="admin-content" #adminContent>
+    @if (error()) {
+      <div class="error-message dismissible-message" role="alert">
+        <span>{{ error() }}</span>
+      </div>
+    }
+    @if (message()) {
+      <div class="success-message dismissible-message" role="status">
+        <span>{{ message() }}</span>
+      </div>
+    }
+
+    <div class="admin-tabs" role="tablist" aria-label="Ticket management sections">
+      <button
+        id="ticket-form-tab"
+        type="button"
+        role="tab"
+        data-admin-tab="form"
+        [attr.aria-selected]="activeTab === 'form'"
+        [attr.tabindex]="activeTab === 'form' ? 0 : -1"
+        (click)="selectTab('form')"
+        (keydown)="onTabKeydown($event)"
+      >{{ editingTicketId ? 'Edit Ticket' : 'Add Ticket' }}</button>
+      <button
+        id="ticket-list-tab"
+        type="button"
+        role="tab"
+        data-admin-tab="list"
+        [attr.aria-selected]="activeTab === 'list'"
+        [attr.tabindex]="activeTab === 'list' ? 0 : -1"
+        (click)="selectTab('list')"
+        (keydown)="onTabKeydown($event)"
+      >Ticket List ({{ tickets().length }})</button>
+    </div>
+
+    @if (activeTab === 'form') {
+      <section id="ticket-form-panel" class="admin-tab-panel form-tab-panel" role="tabpanel" aria-labelledby="ticket-form-tab" tabindex="0">
+        <form class="admin-form ticket-form" (ngSubmit)="saveTicket()">
+          <div class="form-grid">
+            <label class='form-field'>
+              Ticket ID
+              <input #ticketIdInput name="ticketId" [(ngModel)]="form.ticket_id" required maxlength="50" />
+            </label>
+            <label class='form-field'>
+              Category
+              <select name="category" [(ngModel)]="form.category_id" required>
+                <option [ngValue]="null" disabled>Select category</option>
+                @for (category of categoryOptions; track category.id) {
+                  <option [ngValue]="category.id">{{ category.name }}{{ category.is_active ? '' : ' (inactive)' }}</option>
+                }
+              </select>
+            </label>
+            <label class='form-field'>
+              Status
+              <select name="status" [(ngModel)]="form.status" required>
+                <option value="new">New</option>
+                <option value="inprogress">In Progress</option>
+                <option value="resolved">Resolved</option>
+              </select>
+            </label>
+            <label class='form-field'>
+              Created date
+              <input name="createdAt" type="date" [(ngModel)]="form.created_at" required />
+            </label>
+            <label class='form-field'>
+              Subject
+              <input name="subject" [(ngModel)]="form.subject" required />
+            </label>
+            <label class='form-field'>
+              Description
+              <textarea name="description" [(ngModel)]="form.description" rows="3" required></textarea>
+            </label>
+            <label class='form-field'>
+              Resolution notes{{ form.status === 'resolved' ? ' (required for resolved tickets)' : ' (optional until resolved)' }}
+              <textarea name="resolution" [(ngModel)]="form.resolution_notes" rows="3" [required]="form.status === 'resolved'"></textarea>
+            </label>
+            <label class='form-field'>
+              Tags (comma-separated)
+              <input name="tags" [(ngModel)]="form.tags" placeholder="login, password-reset" />
+            </label>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" type="submit" [disabled]="loading() || categoryOptions.length === 0">
+              {{ editingTicketId ? 'Save Changes' : 'Add Ticket' }}
+            </button>
+            @if (editingTicketId) {
+              <button class="btn btn-secondary" type="button" (click)="cancelEdit()">Cancel Edit</button>
+            }
+          </div>
+          @if (categoryOptions.length === 0) {
+            <p class="form-hint">Add an active category before creating a ticket.</p>
+          }
+        </form>
+      </section>
+    }
+
+    @if (activeTab === 'list') {
+      <section id="ticket-list-panel" class="admin-tab-panel list-tab-panel" role="tabpanel" aria-labelledby="ticket-list-tab" tabindex="0">
+        <div class="admin-list-scroll-area" #ticketListContent>
+          @if (loading() && tickets().length === 0) {
+            <p role="status">Loading tickets...</p>
+          } @else if (tickets().length === 0) {
+            <p>No tickets are available.</p>
+          } @else {
+            <div class="admin-list">
+              @for (ticket of paginatedTickets; track ticket.ticket_id) {
+                <article class="admin-list-row ticket-list-row">
+                  <div class="ticket-list-details">
+                    <strong>{{ ticket.ticket_id }} — {{ ticket.subject }}</strong>
+                    <!-- <span>{{ ticket.category }} · {{ ticket.status }} · {{ ticket.created_at | date:'mediumDate' }}</span> -->
+                    <span>{{ ticket.description }}</span>
+                  </div>
+                  <div class="row-actions">
+                    <button type="button" class="btn btn-secondary" (click)="toggleTicketDetails(ticket.ticket_id)">
+                      {{ expandedTicketId() === ticket.ticket_id ? 'View less' : 'View more' }}
+                    </button>
+                    <button type="button" class="btn btn-secondary" (click)="editTicket(ticket, ticketListContent)" [disabled]="loading()">Edit</button>
+                    @if (confirmingDeleteId !== ticket.ticket_id) {
+                      <button type="button" class="btn btn-remove" (click)="confirmingDeleteId = ticket.ticket_id" [disabled]="loading()">Delete</button>
+                    }
+                  </div>
+                  @if (expandedTicketId() === ticket.ticket_id) {
+                    <dl class="ticket-expanded-details">
+                      <div><dt>Category</dt><dd>{{ ticket.category }}</dd></div>
+                      <div><dt>Status</dt><dd>{{ ticket.status }}</dd></div>
+                      <div><dt>Created</dt><dd>{{ ticket.created_at | date:'mediumDate' }}</dd></div>
+                      <div><dt>Description</dt><dd>{{ ticket.description }}</dd></div>
+                      <div><dt>Resolution notes</dt><dd>{{ ticket.resolution_notes || 'No resolution recorded yet.' }}</dd></div>
+                      <div><dt>Tags</dt><dd>{{ ticket.tags?.length ? ticket.tags.join(', ') : 'None' }}</dd></div>
+                    </dl>
+                  }
+                  @if (confirmingDeleteId === ticket.ticket_id) {
+                    <div class="inline-confirmation" role="alertdialog">
+                      <span>Permanently delete ticket {{ ticket.ticket_id }}?</span>
+                      <div class="row-actions">
+                        <button type="button" class="btn btn-secondary" (click)="confirmingDeleteId = null">Cancel</button>
+                        <button type="button" class="btn btn-remove" (click)="deleteTicket(ticket)" [disabled]="loading()">Confirm Delete</button>
+                      </div>
+                    </div>
+                  }
+                </article>
+              }
+            </div>
+          }
+        </div>
+        @if (tickets().length > 0) {
+          <nav class="ticket-pagination" aria-label="Ticket list pagination">
+            <label class="page-size-control">
+              Records per page
+              <select [ngModel]="pageSize()" (ngModelChange)="setPageSize($event)" name="pageSize">
+                <option [ngValue]="10">10</option>
+                <option [ngValue]="20">20</option>
+                <option [ngValue]="50">50</option>
+                <option [ngValue]="100">100</option>
+              </select>
+            </label>
+            @if (totalPages > 1) {
+              <div class="ticket-pagination-controls">
+                <button class="btn btn-secondary" type="button" (click)="changePage(currentPage() - 1)" [disabled]="currentPage() === 1">Previous</button>
+                <span>Page {{ currentPage() }} of {{ totalPages }}</span>
+                <button class="btn btn-secondary" type="button" (click)="changePage(currentPage() + 1)" [disabled]="currentPage() === totalPages">Next</button>
+              </div>
+            }
+          </nav>
+        }
+      </section>
+    }
+  </div>
+</section>

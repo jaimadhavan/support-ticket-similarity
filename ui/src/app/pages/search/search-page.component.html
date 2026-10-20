@@ -53,6 +53,7 @@
 @if (error) {
   <div class="error-message dismissible-message" role="alert">
     <span>{{ error }}</span>
+    <button type="button" class="message-dismiss" aria-label="Dismiss message" (click)="dismissFeedback.emit()">&times;</button>
   </div>
 }
 @if (searchPerformed && matchStatus === 'no_good_match' && !loading && !error) {

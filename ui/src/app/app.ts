@@ -6,7 +6,15 @@ import { CategoriesPageComponent } from './pages/categories/categories-page.comp
 import { TicketsPageComponent } from './pages/tickets/tickets-page.component';
 import { HistoricalPageComponent } from './pages/historical/historical-page.component';
 import { SearchPageComponent } from './pages/search/search-page.component';
-import { AppPage, MatchStatus, Ticket, UserRole } from './app.models';
+import {
+  AppPage,
+  HistoricalLoadSummary,
+  HistoricalRemovalSummary,
+  MatchStatus,
+  Ticket,
+  TicketSearchResponse,
+  UserRole
+} from './app.models';
 import { ApplicationHeaderComponent } from './shared/application-header.component';
 import { ApplicationNavigationComponent } from './shared/application-navigation.component';
 
@@ -49,7 +57,7 @@ export class App implements OnDestroy, OnInit {
 
   changeUserRole(role: UserRole) {
     this.userRole.set(role);
-    this.clearHistoricalFeedback();
+    this.clearFeedback();
     if (role === 'Support Agent') {
       this.activePage.set('search');
       this.removeConfirmationOpen.set(false);
@@ -61,7 +69,7 @@ export class App implements OnDestroy, OnInit {
       return;
     }
     if (page !== this.activePage()) {
-      this.clearHistoricalFeedback();
+      this.clearFeedback();
     }
     this.activePage.set(page);
     if (page === 'search' || page === 'historical') {
@@ -104,10 +112,6 @@ export class App implements OnDestroy, OnInit {
     this.feedbackTimer = setTimeout(() => this.clearFeedback(), 5000);
   }
 
-  private clearHistoricalFeedback() {
-    this.clearFeedback();
-  }
-
   refreshHistoricalTicketAvailability() {
     this.availabilityLoading.set(true);
     this.historicalTicketCount.set(null);
@@ -147,8 +151,8 @@ export class App implements OnDestroy, OnInit {
     this.searchPerformed.set(true);
     this.matchStatus.set(null);
 
-    this.ticketService.searchTickets(this.keyword,this.resultLimit).subscribe({
-      next: (response: { tickets: Ticket[]; matchStatus: 'good_match' | 'no_good_match' }) => {
+    this.ticketService.searchTickets(this.keyword, this.resultLimit).subscribe({
+      next: (response: TicketSearchResponse) => {
         this.tickets.set(response.tickets);
         this.matchStatus.set(response.matchStatus);
         this.loading.set(false);
@@ -187,18 +191,10 @@ export class App implements OnDestroy, OnInit {
 
   loadTickets() {
     this.loading.set(true);
-    this.clearHistoricalFeedback();
+    this.clearFeedback();
 
     this.ticketService.loadHistoricalTickets().subscribe({
-      next: (response: {
-        message: string;
-        total: number;
-        inserted: number;
-        skipped: number;
-        invalid: number;
-        duplicates: number;
-        failed: number;
-      }) => {
+      next: (response: HistoricalLoadSummary) => {
         this.loading.set(false);
         this.clearSearch();
         this.showFeedback('success',
@@ -217,11 +213,11 @@ export class App implements OnDestroy, OnInit {
 
   removeTickets() {
     this.removing.set(true);
-    this.clearHistoricalFeedback();
+    this.clearFeedback();
     this.removeConfirmationOpen.set(false);
 
     this.ticketService.removeHistoricalTickets().subscribe({
-      next: (response: { message: string; total: number }) => {
+      next: (response: HistoricalRemovalSummary) => {
         this.removing.set(false);
         this.clearSearch();
         this.showFeedback('success', `${response.message} (${response.total} tickets removed).`);
@@ -239,17 +235,12 @@ export class App implements OnDestroy, OnInit {
     if (this.availabilityLoading() || this.availabilityError() || (this.historicalTicketCount() ?? 0) === 0) {
       return;
     }
-    this.clearHistoricalFeedback();
+    this.clearFeedback();
     this.removeConfirmationOpen.set(true);
   }
 
   cancelRemoveTickets() {
     this.removeConfirmationOpen.set(false);
-  }
-
-  closeHistoricalTicketManagement(section: HTMLDetailsElement) {
-    this.removeConfirmationOpen.set(false);
-    section.open = false;
   }
 
   confirmRemoveTickets() {

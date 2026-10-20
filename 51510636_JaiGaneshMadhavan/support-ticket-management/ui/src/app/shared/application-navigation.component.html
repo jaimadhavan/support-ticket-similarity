@@ -1,0 +1,28 @@
+<nav class="app-navigation" aria-label="Application pages">
+  <button
+    type="button"
+    class="nav-button"
+    [class.active]="activePage === 'search'"
+    (click)="pageChange.emit('search')"
+  >Ticket Similarity Search</button>
+  @if (userRole === 'Admin') {
+    <button
+      type="button"
+      class="nav-button"
+      [class.active]="activePage === 'categories'"
+      (click)="pageChange.emit('categories')"
+    >Manage Ticket Categories</button>
+    <button
+      type="button"
+      class="nav-button"
+      [class.active]="activePage === 'tickets'"
+      (click)="pageChange.emit('tickets')"
+    >Manage Tickets</button>
+    <button
+      type="button"
+      class="nav-button"
+      [class.active]="activePage === 'historical'"
+      (click)="pageChange.emit('historical')"
+    >Manage Historical Tickets</button>
+  }
+</nav>

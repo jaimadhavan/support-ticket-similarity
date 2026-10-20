@@ -1,0 +1,259 @@
+:host {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.historical-page {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  margin-top: 0.25rem;
+  padding: 0.65rem;
+  overflow: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.historical-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+  text-align: left;
+}
+
+.historical-heading h2 {
+  margin-bottom: 0.3rem;
+  color: #1f2937;
+  font-size: 1.5rem;
+}
+
+.historical-heading p {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.historical-count-card {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 4px;
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.ticket-count-description {
+  margin-left: 0.3rem;
+  color: #1e40af;
+  font-size: 0.9rem;
+}
+
+.historical-count-card strong {
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.historical-count-card.empty {
+  border-color: #e5e7eb;
+  background: white;
+  color: #6b7280;
+}
+
+.historical-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.historical-actions .btn {
+  width: auto;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.875rem;
+}
+
+.historical-empty-state {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 5px;
+  background: white;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.historical-empty-state strong {
+  color: #334155;
+}
+
+.historical-message {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.65rem;
+}
+
+.error-message,
+.success-message {
+  padding: 0.65rem 0.75rem;
+  border: 1px solid;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.error-message {
+  border-color: #f5c6cb;
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.success-message {
+  border-color: #a7f3d0;
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.message-dismiss {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin: -0.25rem -0.25rem 0 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: currentColor;
+  cursor: pointer;
+}
+
+.message-dismiss:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.message-dismiss:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
+}
+
+.message-dismiss svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.75;
+}
+
+.historical-message .btn {
+  width: auto;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.875rem;
+}
+
+.btn {
+  padding: 0.55rem 1rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-load {
+  border: 1px solid #1d4ed8;
+  background-color: #2563eb;
+  color: white;
+}
+
+.btn-remove {
+  border: 1px solid #dc2626;
+  background-color: #dc2626;
+  color: white;
+}
+
+.btn-load:hover:not(:disabled) {
+  background-color: #1d4ed8;
+}
+
+.btn-remove:hover:not(:disabled) {
+  border-color: #b91c1c;
+  background-color: #b91c1c;
+}
+
+.btn-secondary {
+  border: 1px solid #d1d5db;
+  background-color: white;
+  color: #374151;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  border-color: #9ca3af;
+  background-color: #f9fafb;
+}
+
+.delete-confirmation {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #fdba74;
+  border-left: 4px solid #ea580c;
+  border-radius: 4px;
+  background: #fff7ed;
+  color: #7c2d12;
+}
+
+.confirmation-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+@media (max-width: 768px) {
+  .historical-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .historical-actions {
+    align-items: stretch;
+  }
+
+  .historical-actions .btn {
+    flex: 1 1 auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .historical-page {
+    padding: 0.5rem;
+  }
+
+  .historical-actions {
+    flex-direction: column;
+  }
+
+  .historical-actions .btn {
+    width: 100%;
+  }
+}

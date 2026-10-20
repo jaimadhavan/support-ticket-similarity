@@ -1,0 +1,61 @@
+<div class="container">
+  <app-application-header
+    [userRole]="userRole()"
+    (userRoleChange)="changeUserRole($event)"
+  />
+
+  <app-application-navigation
+    [userRole]="userRole()"
+    [activePage]="activePage()"
+    (pageChange)="navigateTo($event)"
+  />
+
+  @if (activePage() === 'search') {
+    <app-search-page
+      [availabilityLoading]="availabilityLoading()"
+      [availabilityError]="availabilityError()"
+      [resolvedTicketCount]="resolvedTicketCount()"
+      [loading]="loading()"
+      [removing]="removing()"
+      [keyword]="keyword"
+      [resultLimit]="resultLimit"
+      [error]="error()"
+      [searchPerformed]="searchPerformed()"
+      [matchStatus]="matchStatus()"
+      [tickets]="tickets()"
+      [copiedTicketId]="copiedTicketId"
+      (keywordChange)="onKeywordChange($event)"
+      (resultLimitChange)="resultLimit = $event"
+      (search)="searchTickets()"
+      (clear)="clearSearch()"
+      (retryAvailability)="refreshHistoricalTicketAvailability()"
+      (dismissFeedback)="dismissFeedback()"
+      (copyResolution)="copyToClipboard($event.text, $event.event)"
+    />
+  }
+
+  @if (userRole() === 'Admin' && activePage() === 'categories') {
+    <app-categories-page />
+  }
+  @if (userRole() === 'Admin' && activePage() === 'tickets') {
+    <app-tickets-page />
+  }
+  @if (userRole() === 'Admin' && activePage() === 'historical') {
+    <app-historical-page
+      [historicalTicketCount]="historicalTicketCount()"
+      [availabilityLoading]="availabilityLoading()"
+      [availabilityError]="availabilityError()"
+      [loading]="loading()"
+      [removing]="removing()"
+      [removeConfirmationOpen]="removeConfirmationOpen()"
+      [error]="error()"
+      [successMessage]="successMessage()"
+      (loadTickets)="loadTickets()"
+      (requestRemoveTickets)="requestRemoveTickets()"
+      (cancelRemoveTickets)="cancelRemoveTickets()"
+      (confirmRemoveTickets)="confirmRemoveTickets()"
+      (refreshAvailability)="refreshHistoricalTicketAvailability()"
+      (dismissFeedback)="dismissFeedback()"
+    />
+  }
+</div>

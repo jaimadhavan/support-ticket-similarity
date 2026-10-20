@@ -144,7 +144,7 @@ describe('App', () => {
     expect(searchButton.disabled).toBe(false);
   });
 
-  it('keeps the results heading outside the independently scrollable results list', async () => {
+  it('renders search results in the page flow without a nested scroll area', async () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
     await fixture.whenStable();
@@ -170,6 +170,8 @@ describe('App', () => {
     expect(list.getAttribute('role')).toBe('region');
     expect(list.getAttribute('aria-label')).toBe('Search results');
     expect(list.querySelector('.ticket-card')).toBeTruthy();
+    expect(getComputedStyle(fixture.nativeElement.querySelector('app-search-page')).overflowY).toBe('visible');
+    expect(getComputedStyle(list).overflowY).toBe('visible');
   });
 
   it('should explain that a stop-word-only search needs more specific terms', async () => {

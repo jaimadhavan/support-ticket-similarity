@@ -57,7 +57,7 @@ describe('Admin management pages', () => {
     expect(fixture.nativeElement.querySelector('.success-message')).toBeNull();
   });
 
-  it('keeps the category heading fixed while loading a name into the editable field', async () => {
+  it('shows all category content in document flow and loads names into the editable field', async () => {
     service.getCategories.mockReturnValue(of({
       categories: [{ id: 9, name: 'reporting', is_active: true }]
     }));
@@ -71,18 +71,18 @@ describe('Admin management pages', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    const page = fixture.nativeElement.querySelector('.admin-list-scroll-area') as HTMLElement;
+    const content = fixture.nativeElement.querySelector('.admin-list-content') as HTMLElement;
     const heading = fixture.nativeElement.querySelector('.page-heading') as HTMLElement;
     const formTab = fixture.nativeElement.querySelector('#category-form-tab') as HTMLButtonElement;
     const listTab = fixture.nativeElement.querySelector('#category-list-tab') as HTMLButtonElement;
     expect(heading.parentElement).toBe(fixture.nativeElement.querySelector('.admin-page'));
-    expect(page.contains(heading)).toBe(false);
+    expect(content.contains(heading)).toBe(false);
     expect(formTab.getAttribute('aria-selected')).toBe('false');
     expect(listTab.getAttribute('aria-selected')).toBe('true');
     expect(fixture.nativeElement.querySelector('#category-form-panel')).toBeNull();
     expect(fixture.nativeElement.querySelector('#category-list-panel')).not.toBeNull();
-    expect(getComputedStyle(page).overflowY).toBe('auto');
-    expect(getComputedStyle(page).flexGrow).toBe('1');
+    expect(getComputedStyle(content).overflowY).toBe('visible');
+    expect(getComputedStyle(content).flexGrow).toBe('0');
     expect(fixture.nativeElement.textContent).toContain('Add Category');
     formTab.click();
     fixture.detectChanges();
@@ -94,10 +94,8 @@ describe('Admin management pages', () => {
     fixture.detectChanges();
     expect(formTab.getAttribute('aria-selected')).toBe('false');
     expect(listTab.getAttribute('aria-selected')).toBe('true');
-    const activeList = fixture.nativeElement.querySelector('.admin-list-scroll-area') as HTMLElement;
     const editButton = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>)
       .find(button => button.textContent?.trim() === 'Edit') as HTMLButtonElement;
-    activeList.scrollTop = 250;
     editButton.click();
     await fixture.whenStable();
     fixture.detectChanges();
@@ -105,7 +103,6 @@ describe('Admin management pages', () => {
     const input = fixture.nativeElement.querySelector('#category-name') as HTMLInputElement;
     expect(input.value).toBe('reporting');
     expect(fixture.componentInstance.categoryName).toBe('reporting');
-    expect(activeList.scrollTop).toBe(0);
     expect(document.activeElement).toBe(input);
     expect(formTab.getAttribute('aria-selected')).toBe('true');
     expect(listTab.getAttribute('aria-selected')).toBe('false');
@@ -259,12 +256,13 @@ describe('Admin management pages', () => {
     const fixture = TestBed.createComponent(TicketsPageComponent);
     fixture.detectChanges();
     await fixture.whenStable();
-    const page = fixture.nativeElement.querySelector('.admin-list-scroll-area') as HTMLElement;
+    const content = fixture.nativeElement.querySelector('.admin-list-content') as HTMLElement;
     const heading = fixture.nativeElement.querySelector('.page-heading') as HTMLElement;
     expect(heading.parentElement).toBe(fixture.nativeElement.querySelector('.admin-page'));
-    expect(page.contains(heading)).toBe(false);
+    expect(content.contains(heading)).toBe(false);
+    expect(getComputedStyle(content).overflowY).toBe('visible');
     expect(fixture.componentInstance.activeTab).toBe('list');
-    fixture.componentInstance.editTicket(existingTicket, page);
+    fixture.componentInstance.editTicket(existingTicket);
     fixture.componentInstance.form.subject = 'Updated invoice issue';
 
     fixture.componentInstance.saveTicket();
@@ -342,16 +340,15 @@ describe('Admin management pages', () => {
     const fixture = TestBed.createComponent(TicketsPageComponent);
     fixture.detectChanges();
     await fixture.whenStable();
-    const page = fixture.nativeElement.querySelector('.admin-list-scroll-area') as HTMLElement;
-    page.scrollTop = 250;
-    fixture.componentInstance.editTicket(fixture.componentInstance.tickets()[0], page);
+    const content = fixture.nativeElement.querySelector('.admin-list-content') as HTMLElement;
+    fixture.componentInstance.editTicket(fixture.componentInstance.tickets()[0]);
     fixture.detectChanges();
 
     const ticketIdInput = fixture.nativeElement.querySelector('input[name="ticketId"]') as HTMLInputElement;
     expect(fixture.componentInstance.categoryOptions).toEqual([
       { id: 1, name: 'billing', is_active: false }
     ]);
-    expect(page.scrollTop).toBe(0);
+    expect(getComputedStyle(content).overflowY).toBe('visible');
     expect(document.activeElement).toBe(ticketIdInput);
     expect(fixture.componentInstance.activeTab).toBe('form');
     expect(fixture.nativeElement.textContent).toContain('Edit Ticket');
@@ -388,19 +385,19 @@ describe('Admin management pages', () => {
     expect(fixture.nativeElement.querySelectorAll('.ticket-list-row').length).toBe(10);
     const pagination = fixture.nativeElement.querySelector('.ticket-pagination') as HTMLElement;
     const listPanel = fixture.nativeElement.querySelector('#ticket-list-panel') as HTMLElement;
-    const scrollableContent = fixture.nativeElement.querySelector('.admin-list-scroll-area') as HTMLElement;
+    const listContent = fixture.nativeElement.querySelector('.admin-list-content') as HTMLElement;
     expect(pagination.parentElement).toBe(listPanel);
     expect(fixture.componentInstance.activeTab).toBe('list');
-    expect(scrollableContent.contains(pagination)).toBe(false);
+    expect(listContent.contains(pagination)).toBe(false);
     expect(pagination.querySelector('.page-size-control')).toBeTruthy();
     expect(pagination.firstElementChild?.classList.contains('page-size-control')).toBe(true);
     expect(pagination.querySelector('.ticket-pagination-controls')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('.admin-list-toolbar')).toBeNull();
-    expect(getComputedStyle(scrollableContent).overflowY).toBe('auto');
-    expect(getComputedStyle(scrollableContent).minHeight).toBe('0px');
+    expect(getComputedStyle(listContent).overflowY).toBe('visible');
+    expect(getComputedStyle(listContent).minHeight).toBe('auto');
     expect(getComputedStyle(listPanel).display).toBe('flex');
-    expect(getComputedStyle(listPanel).flexGrow).toBe('1');
-    expect(getComputedStyle(scrollableContent).flexGrow).toBe('1');
+    expect(getComputedStyle(listPanel).flexGrow).toBe('0');
+    expect(getComputedStyle(listContent).flexGrow).toBe('0');
     fixture.componentInstance.changePage(2);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelectorAll('.ticket-list-row').length).toBe(10);
