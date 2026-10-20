@@ -1,227 +1,99 @@
-# Support Ticket Similarity Search Application
+# Support Ticket Similarity Application
 
-A full-stack application for searching similar support tickets using keyword matching. Built with Node.js (Express) backend and Angular frontend, with PostgreSQL database.
+A full-stack prototype that helps support agents find relevant **resolved** tickets and reuse their resolutions. The Angular UI communicates with an Express API backed by PostgreSQL. Search results include matched terms so agents can assess why a prior ticket was returned.
 
 ## Features
 
-- **Keyword-based search**: Find similar resolved tickets by searching keywords in subject, description, resolution notes, and tags
-- **Full-text search**: PostgreSQL full-text search with relevance ranking
-- **Ticket normalization**: Only loads tickets with complete required fields
-- **Deduplication**: Prevents duplicate tickets using ON CONFLICT handling
-- **Clean UI**: Angular-based interface with responsive design
+- Search resolved tickets by keywords or issue description; suppress weak matches and show matching terms and resolution notes.
+- Manage categories and tickets through Admin pages.
+- Load bundled historical ticket data with validation, duplicate handling, and an insertion summary; remove historical tickets after explicit confirmation.
+- Show all-ticket and resolved-ticket counts separately; disable Search when no resolved tickets are available.
+- Use distinct application page routes and a shared header/navigation shell.
+- Dismiss feedback manually; operation feedback also clears after five seconds.
+- Use normal browser scrolling when page content exceeds the viewport; pages do not use nested content scroll areas.
 
-## Prerequisites
+## Requirements
 
-- Node.js (v18 or higher)
-- PostgreSQL (v12 or higher)
-- npm
+- Node.js and npm compatible with the Angular CLI version in `ui/package.json`
+- PostgreSQL
 
-## Database Setup
+## Local setup
 
-1. Create a PostgreSQL database named `supportagent`:
-```bash
-createdb supportagent
-```
+Create a PostgreSQL database, for example `supportagent`, then create `backend/.env` with your local connection settings. Do not commit real credentials.
 
-2. Verify your database connection settings in `backend/.env`:
-```
-DB_USER_NAME=postgres
+```dotenv
+DB_USER_NAME=<database-user>
 DB_HOST=localhost
 DB_NAME=supportagent
-DB_PASSWORD=admin
+DB_PASSWORD=<database-password>
 DB_PORT=5432
+PORT=3000
 ```
 
-Update these values if your PostgreSQL configuration differs.
+Initialize and start the API:
 
-## Backend Setup
-
-1. Navigate to the backend directory:
-```bash
-cd backend
-```
-
-2. Install dependencies:
-```bash
+```powershell
+Set-Location backend
 npm install
-```
-
-3. Initialize the database schema:
-```bash
 npm run init-db
-```
-
-This creates the ticket and category tables, adds indexes for full-text search, and migrates any existing ticket category values into the categories table. Tickets store a `category_id` foreign key; the old text `category` column is removed after its values are migrated. Rerun this command on an existing database to apply the schema migration.
-
-4. Start the backend server:
-```bash
 npm start
 ```
 
-The backend will run on `http://localhost:3000`
+In a second terminal, start the Angular UI:
 
-## Frontend Setup
-
-1. Navigate to the UI directory:
-```bash
-cd ui
-```
-
-2. Install dependencies:
-```bash
+```powershell
+Set-Location ui
 npm install
-```
-
-3. Start the Angular development server:
-```bash
 npm start
 ```
 
-The frontend will run on `http://localhost:4200`
+Open `http://localhost:4200`. Select **Admin → Manage Historical Tickets** to load the sample data from `starter_kit/data/tickets.json`; then use **Ticket Similarity Search**. The Angular development server proxies API requests to `http://localhost:3000` using [proxy.config.json](./ui/proxy.config.json).
 
-## Loading Tickets
+`npm run init-db` creates the tables and indexes and migrates legacy text category values into the categories table. Rerun it against an existing database to apply the schema migration.
 
-Before searching, you need to load the historical ticket data:
+## Application pages
 
-1. Ensure the backend server is running
-2. Open the Angular UI in your browser
-3. Click the "Load Tickets from JSON" button
-4. This will read tickets from `starter_kit/data/tickets.json` and insert them into the database
+| Page | Route | Availability |
+|---|---|---|
+| Ticket Similarity Search | `/search` | Support Agent and Admin |
+| Manage Ticket Categories | `/categories` | Admin UI role |
+| Manage Tickets | `/tickets` | Admin UI role |
+| Manage Historical Tickets | `/historical` | Admin UI role |
 
-**Or** you can load tickets via API directly:
-```bash
-curl -X POST http://localhost:3000/api/tickets/loadHistoricalTickets
+The role selector is a UI demonstration only. The API does **not** enforce authentication or authorization; do not expose this prototype to untrusted users.
+
+## API reference
+
+| Method and path | Purpose |
+|---|---|
+| `GET /api/tickets/availability` | Return all-ticket and resolved-ticket counts |
+| `POST /api/tickets/loadHistoricalTickets` | Load sample tickets; report total, inserted, skipped, invalid, duplicate, and failed counts |
+| `DELETE /api/tickets/removeHistoricalTickets` | Delete all tickets |
+| `GET /api/tickets/search?keyword=<text>&limit=5` | Search resolved tickets; `limit` defaults to 5 and is capped at 50 |
+| `GET/POST/PUT/DELETE /api/categories[/:categoryId]` | List, create, rename, or deactivate categories |
+| `GET/POST /api/admin/tickets` | List or create managed tickets |
+| `PUT/DELETE /api/admin/tickets/:ticketId` | Update or permanently delete a managed ticket |
+
+Search ignores common terms. Multi-term queries require at least two distinct meaningful terms to match; a one-term query can return an exact descriptive-term match. A query containing only ignored terms returns a validation error. Results are ordered by matched-term count, PostgreSQL full-text rank, and recency. Ranking is an ordering signal, not a calibrated confidence score.
+
+Categories are soft-deactivated, so existing tickets can retain their category. Ticket status is `new`, `inprogress`, or `resolved`; resolution notes are required for resolved tickets. Historical loading creates categories as needed and associates tickets using `category_id`.
+
+## Validation
+
+Run the backend fixture tests and UI tests/build:
+
+```powershell
+Set-Location backend
+npm test
+Set-Location ..\ui
+npm test -- --watch=false
+npm run build
 ```
 
-The loading process:
-- Reads tickets from `starter_kit/data/tickets.json`
-- Normalizes tickets (ensures all required fields are present)
-- Counts tickets with missing or invalid data as skipped
-- Inserts only unique tickets (duplicates are skipped)
-- Returns the source total, inserted and skipped totals, and separate invalid, duplicate, and failed counts
+Backend fixtures cover representative login, chart, billing, and no-strong-match cases. They simulate the matching policy against the bundled sample data; they do not execute PostgreSQL search queries or establish production relevance.
 
-## API Endpoints
+## Scope and limitations
 
-### Historical Ticket Availability
-```
-GET /api/tickets/availability
-```
-Returns `{ "count": <number>, "resolvedCount": <number> }`. `count` includes tickets of every status and is shown in Manage Historical Tickets; `resolvedCount` is used to enable similarity search only when at least one resolved ticket exists. The UI refreshes these counts on startup, when opening Search or Manage Historical Tickets, and after loading or deleting historical tickets.
+This is an agent-assisted demonstration using synthetic data. It has no live ticket-system integration, authentication, or server-side authorization. Keyword/full-text matching may miss semantically similar tickets with different wording. Before production use, add API access controls and auditability, evaluate search against labeled real tickets, and test database behavior, performance, ingestion, and operational requirements.
 
-### Load Tickets
-```
-POST /api/tickets/loadHistoricalTickets
-```
-Loads tickets from the JSON file into the database.
-The response's `total` is the number of source records, and `skipped` equals `invalid + duplicates + failed`.
-
-### Search Tickets
-```
-GET /api/tickets/search?keyword=<keyword>&limit=5
-```
-Searches resolved tickets by descriptive terms in subject, description, resolution notes, and tags. The `limit` is optional and capped at 50. Results include `matchedWords` and `matchCount`; `matchStatus` is `good_match` or `no_good_match`. A result is shown when at least two distinct meaningful terms match, or when a one-term query matches that term. Queries containing only common/ignored words (for example, `the`) receive a validation message asking for a product, feature, or error term. Search rank is only used for ordering and is not a probability or confidence score.
-
-### Remove Historical Tickets
-```
-DELETE /api/tickets/removeHistoricalTickets
-```
-Deletes all tickets from the database.
-In the UI, clicking **Remove Historical Tickets** first opens a confirmation prompt showing the total number of ticket records to be deleted, regardless of status. The delete request is sent only after the user confirms; cancel leaves the database unchanged.
-
-### Admin management APIs
-
-- `GET/POST/PUT/DELETE /api/categories` lists, adds, renames, and soft-deletes categories. Deleting a category deactivates it; it does not remove the category or rewrite existing tickets.
-- `GET/POST /api/admin/tickets` and `PUT/DELETE /api/admin/tickets/:ticketId` list, add, edit, and permanently delete individual ticket records. Ticket status is limited to `new`, `inprogress`, or `resolved`.
-- Ticket category choices come from the categories table and use category IDs in ticket records. Historical loading creates each unique category as needed and writes its ID to the associated ticket. Deactivated categories are unavailable for new tickets but can be retained on tickets already assigned to them.
-
-The UI role selector defaults to **Support Agent** and offers **Admin** management menus for categories, tickets, and historical data. Historical management displays the total ticket count across all statuses and keeps load/confirmed-remove actions in a compact view. Feedback on Search, category, ticket, and historical management pages can be dismissed and clears automatically after five seconds. Search is enabled only when at least one resolved ticket exists, and search results include resolved tickets only. Category and ticket management use mutually exclusive Add/Edit and List tabs; the list opens by default, and selecting a list item's **Edit** action opens the matching form. Canceling or saving returns to the list. Ticket pagination stays fixed at the bottom of the list panel while its records scroll; the Records per page selector is on the left of the pagination bar, with page controls on the right. Ticket management paginates at 10, 20, 50, or 100 records per page and provides a per-ticket expanded details view. Resolution notes can be left blank until a ticket is marked resolved. Admin form controls and action styling follow the Search-page style specification in `style-specification/TICKET_SIMILARITY_SEARCH.md`. This is a presentation-only demo switch, not authentication or authorization: the API does not enforce roles, so do not expose this prototype to untrusted users.
-
-## Using the Application
-
-1. Open `http://localhost:4200` in your browser
-2. Enter a keyword or sentence in the search box:
-   - Single keyword: "login", "sync", "billing", "api"
-   - Multiple words: "login password reset", "billing invoice issue", "sync data quality"
-3. Click "Search" or press Enter
-4. View resolved tickets that meet the minimum match rule, along with their matching terms and resolution notes
-5. If no result meets the rule, the UI explains that there is no strong historical match and suggests adding specific details
-6. Use the "Clear" button to reset the search
-
-Loading and removing historical tickets show their result and counts inline in the UI; no browser alert dialogs are used.
-
-### Search Features
-
-- **Resolved precedents only**: Unresolved tickets are never suggested as past resolutions.
-- **Explainable matching**: Each result displays the distinct meaningful query terms that matched it.
-- **No-good-match behavior**: Generic words are ignored; multi-term searches need at least two distinct meaningful matches before any candidate is presented. Single descriptive-term searches can still return exact-term matches.
-- **Search validation**: If all entered words are generic terms that are ignored, the UI explains that more specific search terms are needed.
-- **Ranking**: Results are ordered by the number of matched terms, then PostgreSQL full-text rank and recency. The rank is an ordering signal, not calibrated confidence.
-
-## Example-ticket acceptance checks
-
-Run the fixture checks from the backend directory with `npm test`. They use all four tickets in `starter_kit/data/new_tickets_example.json` and the historical seed set. Expected behavior:
-
-- NT-1 ranks T-1001 (password reset / email).
-- NT-2 ranks T-1201 (blank revenue chart).
-- NT-3 ranks T-1303 (duplicate charge).
-- NT-4 (Snowflake) yields no strong match rather than a weak integration/sync precedent.
-
-These are fixture-level checks using a simple token-overlap simulation of the meaningful-term policy. They validate the acceptance examples and threshold behavior, but do not validate PostgreSQL stemming, actual query plans, or relevance on production ticket data; those need a database-backed integration evaluation.
-
-## Database Schema
-
-The `tickets` table includes:
-- `ticket_id`: Unique identifier (VARCHAR)
-- `category_id`: Foreign key to `categories.id`
-- `subject`: Ticket subject/title
-- `description`: Ticket description
-- `resolution_notes`: How the ticket was resolved
-- `tags`: Array of tags for categorization
-- `created_at`: Ticket creation date
-- `status`: Ticket status (resolved, etc.)
-
-The `categories` table holds unique category names, their active state, and an ID referenced by tickets. The Admin screens retrieve category names and IDs from this table.
-
-Indexes:
-- Unique index on `ticket_id`
-- Index on `category_id` for filtering
-- GIN index on `tags` for tag-based search
-- Full-text search index on subject, description, and resolution notes
-
-## Troubleshooting
-
-### Backend won't start
-- Verify PostgreSQL is running
-- Check database credentials in `.env`
-- Ensure the `supportagent` database exists
-
-### Tickets won't load
-- Verify `starter_kit/data/tickets.json` exists
-- Check backend server logs for errors
-- Ensure database schema is initialized (`npm run init-db`)
-
-### Search returns no results
-- Ensure tickets are loaded into the database
-- Try different keywords
-- Check backend console for any errors
-
-### Frontend can't connect to backend
-- Ensure backend is running on port 3000
-- Check CORS configuration in backend
-- Verify proxy configuration in `ui/proxy.conf.json`
-
-## Development
-
-### Backend
-- Entry point: `backend/server.js`
-- Database schema: `backend/schema.sql`
-- Initialization script: `backend/init-db.js`
-
-### Frontend
-- Main component: `ui/src/app/app.ts`
-- Template: `ui/src/app/app.html`
-- Styles: `ui/src/app/app.css`
-
-## License
-
-ISC
+For the submission guide and design rationale, see [51510636_JaiGaneshMadhavan/README.md](./51510636_JaiGaneshMadhavan/README.md) and [SOLUTION_DESIGN.md](./51510636_JaiGaneshMadhavan/SOLUTION_DESIGN.md).
