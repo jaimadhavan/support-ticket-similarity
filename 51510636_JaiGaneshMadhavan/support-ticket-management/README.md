@@ -41,11 +41,13 @@ Node.js, npm, and PostgreSQL.
 
 ## Pages and APIs
 
-UI routes: `/search`, `/categories`, `/tickets`, and `/historical`. Admin-only menus are hidden from Support Agent; this is not API authorization.
+UI routes: `/search`, `/categories`, `/tickets`, `/historical`, and `/analytics` (System Analysis). Search is available to Support Agent and Admin; management and analytics are Admin UI pages. The role selector is not API authorization.
 
-API routes: `GET /api/tickets/availability`, `POST /api/tickets/loadHistoricalTickets`, `DELETE /api/tickets/removeHistoricalTickets`, `GET /api/tickets/search`, category CRUD at `/api/categories`, and ticket CRUD at `/api/admin/tickets`.
+API routes: `GET /api/tickets/availability`, `GET /api/tickets/usage?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&categoryId=<id>&page=1`, `POST /api/tickets/loadHistoricalTickets`, `DELETE /api/tickets/removeHistoricalTickets`, `GET /api/tickets/search`, category CRUD at `/api/categories`, and ticket CRUD at `/api/admin/tickets`.
 
 Search returns resolved tickets only. Multi-term queries need at least two meaningful matches; a one-term query can match exactly. Matched terms are shown to explain results. PostgreSQL rank orders results but is not a confidence score.
+
+Searches and returned ticket/category/ticket-detail snapshots are stored in `search_usage` and `search_usage_matches`. Schema initialization backfills subject, status, and creation date on existing match rows when the corresponding ticket still exists. The Admin System Analysis page defaults to Today and offers Last 7 days, Last 30 days, and custom inclusive UTC dates. Summary metrics cover all categories in the range; the category filter applies only to category/search details. Category rows show creation dates and period ticket counts. Match counts expand inline to show matched ticket ID, category, subject, status, and ticket creation date. Search text is retained; usage starts after schema initialization and is independent of ticket deletion.
 
 ## Tests and build
 

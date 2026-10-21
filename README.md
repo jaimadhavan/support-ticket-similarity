@@ -8,6 +8,7 @@ A full-stack prototype that helps support agents find relevant **resolved** tick
 - Manage categories and tickets through Admin pages.
 - Load bundled historical ticket data with validation, duplicate handling, and an insertion summary; remove historical tickets after explicit confirmation.
 - Show all-ticket and resolved-ticket counts separately; disable Search when no resolved tickets are available.
+- Give Admin users a System Analysis dashboard with search and ticket/category creation metrics, period presets/custom dates, category-filtered details, and expandable matched-ticket information.
 - Use distinct application page routes and a shared header/navigation shell.
 - Dismiss feedback manually; operation feedback also clears after five seconds.
 - Use normal browser scrolling when page content exceeds the viewport; pages do not use nested content scroll areas.
@@ -59,6 +60,7 @@ Open `http://localhost:4200`. Select **Admin → Manage Historical Tickets** to 
 | Manage Ticket Categories | `/categories` | Admin UI role |
 | Manage Tickets | `/tickets` | Admin UI role |
 | Manage Historical Tickets | `/historical` | Admin UI role |
+| System Analysis | `/analytics` | Admin UI role |
 
 The role selector is a UI demonstration only. The API does **not** enforce authentication or authorization; do not expose this prototype to untrusted users.
 
@@ -67,6 +69,7 @@ The role selector is a UI demonstration only. The API does **not** enforce authe
 | Method and path | Purpose |
 |---|---|
 | `GET /api/tickets/availability` | Return all-ticket and resolved-ticket counts |
+| `GET /api/tickets/usage?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&categoryId=<id>&page=1` | Return search metrics, ticket/category creation totals and category breakdown, plus paginated search records; `categoryId` is optional |
 | `POST /api/tickets/loadHistoricalTickets` | Load sample tickets; report total, inserted, skipped, invalid, duplicate, and failed counts |
 | `DELETE /api/tickets/removeHistoricalTickets` | Delete all tickets |
 | `GET /api/tickets/search?keyword=<text>&limit=5` | Search resolved tickets; `limit` defaults to 5 and is capped at 50 |
@@ -77,6 +80,8 @@ The role selector is a UI demonstration only. The API does **not** enforce authe
 Search ignores common terms. Multi-term queries require at least two distinct meaningful terms to match; a one-term query can return an exact descriptive-term match. A query containing only ignored terms returns a validation error. Results are ordered by matched-term count, PostgreSQL full-text rank, and recency. Ranking is an ordering signal, not a calibrated confidence score.
 
 Categories are soft-deactivated, so existing tickets can retain their category. Ticket status is `new`, `inprogress`, or `resolved`; resolution notes are required for resolved tickets. Historical loading creates categories as needed and associates tickets using `category_id`.
+
+Each completed search (including searches with no matches and stop-word-only attempts) is recorded in `search_usage`; matched ticket and category snapshots are stored in `search_usage_matches`. Usage data is collected only after the schema migration has been applied and is not retroactively populated. The migration backfills subject, status, and creation date for existing matches whose tickets still exist. The System Analysis dashboard defaults to today and offers the last 7 days, last 30 days, or a custom inclusive date range. Date boundaries and displayed timestamps use UTC. Summary metrics cover all categories in the selected period. The matched-ticket category filter applies only to the tickets-by-category and search-detail sections; filtered searches require at least one match in that category, and their expanded match details show the ticket ID, category, subject, status, and ticket creation date. The category table includes each category's creation date and period ticket count. Ticket creation uses `created_at_timestamp`; category creation uses `categories.created_at`. Search text is retained in the database, so configure retention and access controls appropriate to the sensitivity of production queries.
 
 ## Validation
 

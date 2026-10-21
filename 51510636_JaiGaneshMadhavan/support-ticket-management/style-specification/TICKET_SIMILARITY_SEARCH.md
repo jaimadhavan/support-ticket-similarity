@@ -21,7 +21,7 @@ This document captures the current visual language of the Ticket Similarity Sear
 
 | Element | Specification |
 |---|---|
-| Page container | Centered; maximum width `1200px`; compact outer padding; normal document flow with a minimum viewport height |
+| Page container | Centered; maximum width `1200px`; `0.75rem` outer padding (`0.5rem` at mobile); viewport-height vertical flex layout |
 | Font | System sans-serif stack: `-apple-system`, BlinkMacSystemFont, `Segoe UI`, Roboto, `Helvetica Neue`, Arial |
 | Main title | `2.5rem`, `#333`, centered; reduce to `1.75rem` on narrow screens |
 | Supporting copy | `1.1rem`, `#666`, centered |
@@ -30,7 +30,7 @@ This document captures the current visual language of the Ticket Similarity Sear
 | Body copy | `#666`, line-height `1.6` |
 | Compact labels and metadata | `0.875rem`; labels use weight `600` and `#6b7280` |
 
-The application header is separated from the navigation by visible vertical space. Page content follows normal document flow: the browser scrollbar appears only when content exceeds the viewport, and result lists do not create nested scroll areas. Controls and results are vertically stacked, with a single-column ticket list and about `0.65rem` between cards. The search controls are a horizontal flex row with compact gaps; on viewports at or below `768px`, the controls stack vertically.
+The application header is separated from the navigation by visible vertical space. The browser viewport remains fixed without document scrolling. Controls and results are vertically stacked; the results heading stays fixed above a keyboard-accessible, independently scrollable, single-column ticket list with about `0.65rem` between cards. The search controls are a horizontal flex row with compact gaps; on viewports at or below `768px`, the controls stack vertically.
 
 ## Color and shape
 

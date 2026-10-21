@@ -16,6 +16,22 @@ describe('App', () => {
           provide: TicketService,
           useValue: {
             getHistoricalTicketAvailability: () => of({ count: 0, resolvedCount: 0 }),
+            getCategories: () => of({ categories: [] }),
+            getSearchUsage: () => of({
+              startDate: '2026-10-01',
+              endDate: '2026-10-30',
+              categoryId: null,
+              summary: {
+                totalSearches: 0, successfulMatches: 0, noMatchSearches: 0, totalMatchedTickets: 0,
+                categoriesCreated: 0, ticketsCreated: 0
+              },
+              page: 1,
+              pageSize: 25,
+              pageCount: 1,
+              detailCount: 0,
+              ticketsByCategory: [],
+              searches: []
+            }),
             searchTickets: () => of({ tickets: [], matchStatus: 'no_good_match' }),
             loadHistoricalTickets: () => of({}),
             removeHistoricalTickets: () => of({})
@@ -78,6 +94,21 @@ describe('App', () => {
       useValue: {
         getHistoricalTicketAvailability: () => of({ count: 1, resolvedCount: 1 }),
         getCategories: () => of({ categories: [] }),
+        getSearchUsage: () => of({
+          startDate: '2026-10-01',
+          endDate: '2026-10-30',
+          categoryId: null,
+          summary: {
+            totalSearches: 0, successfulMatches: 0, noMatchSearches: 0, totalMatchedTickets: 0,
+            categoriesCreated: 0, ticketsCreated: 0
+          },
+          page: 1,
+          pageSize: 25,
+          pageCount: 1,
+          detailCount: 0,
+          ticketsByCategory: [],
+          searches: []
+        }),
         getManagedTickets: () => of({ tickets: [] }),
         searchTickets: () => of({ tickets: [], matchStatus: 'no_good_match' }),
         loadHistoricalTickets: () => of({}),
@@ -90,7 +121,7 @@ describe('App', () => {
     fixture.componentInstance.changeUserRole('Admin');
     fixture.detectChanges();
 
-    for (const page of ['search', 'categories', 'tickets', 'historical'] as const) {
+    for (const page of ['search', 'categories', 'tickets', 'historical', 'analytics'] as const) {
       fixture.componentInstance.navigateTo(page);
       fixture.detectChanges();
       await fixture.whenStable();
@@ -123,6 +154,21 @@ describe('App', () => {
       useValue: {
         getHistoricalTicketAvailability: () => of({ count: 1, resolvedCount: 1 }),
         getCategories: () => of({ categories: [] }),
+        getSearchUsage: () => of({
+          startDate: '2026-10-01',
+          endDate: '2026-10-30',
+          categoryId: null,
+          summary: {
+            totalSearches: 0, successfulMatches: 0, noMatchSearches: 0, totalMatchedTickets: 0,
+            categoriesCreated: 0, ticketsCreated: 0
+          },
+          page: 1,
+          pageSize: 25,
+          pageCount: 1,
+          detailCount: 0,
+          ticketsByCategory: [],
+          searches: []
+        }),
         getManagedTickets: () => of({ tickets: [] }),
         searchTickets: () => of({ tickets: [], matchStatus: 'no_good_match' }),
         loadHistoricalTickets: () => of({}),

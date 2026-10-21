@@ -21,6 +21,52 @@ CREATE TABLE IF NOT EXISTS tickets (
     created_at_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+ALTER TABLE tickets
+    ADD COLUMN IF NOT EXISTS created_at_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+CREATE TABLE IF NOT EXISTS search_usage (
+    id BIGSERIAL PRIMARY KEY,
+    search_text TEXT NOT NULL,
+    searched_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    match_found BOOLEAN NOT NULL,
+    match_count INTEGER NOT NULL CHECK (match_count >= 0)
+);
+
+CREATE INDEX IF NOT EXISTS idx_search_usage_searched_at
+    ON search_usage(searched_at DESC);
+
+CREATE TABLE IF NOT EXISTS search_usage_matches (
+    id BIGSERIAL PRIMARY KEY,
+    search_id BIGINT NOT NULL REFERENCES search_usage(id) ON DELETE CASCADE,
+    ticket_id VARCHAR(50) NOT NULL,
+    category_id INTEGER NOT NULL,
+    category_name VARCHAR(50) NOT NULL,
+    ticket_subject TEXT,
+    ticket_status VARCHAR(50),
+    ticket_created_at DATE,
+    UNIQUE (search_id, ticket_id)
+);
+
+ALTER TABLE search_usage_matches
+    ADD COLUMN IF NOT EXISTS ticket_subject TEXT,
+    ADD COLUMN IF NOT EXISTS ticket_status VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS ticket_created_at DATE;
+
+UPDATE search_usage_matches AS usage_match
+SET ticket_subject = COALESCE(usage_match.ticket_subject, ticket.subject),
+    ticket_status = COALESCE(usage_match.ticket_status, ticket.status),
+    ticket_created_at = COALESCE(usage_match.ticket_created_at, ticket.created_at)
+FROM tickets AS ticket
+WHERE ticket.ticket_id = usage_match.ticket_id
+  AND (
+      usage_match.ticket_subject IS NULL
+      OR usage_match.ticket_status IS NULL
+      OR usage_match.ticket_created_at IS NULL
+  );
+
+CREATE INDEX IF NOT EXISTS idx_search_usage_matches_category
+    ON search_usage_matches(category_id, search_id);
+
 ALTER TABLE tickets ADD COLUMN IF NOT EXISTS category_id INTEGER;
 
 DO $$

@@ -10,7 +10,8 @@ A full-stack support workflow prototype that helps agents find relevant, resolve
 - Manage ticket categories and ticket records, with status and category validation.
 - Load sample historical tickets with validation, duplicate handling, and an insertion summary; remove them only after confirmation.
 - View overall and resolved-ticket counts separately. Search remains unavailable if no resolved tickets exist.
-- Navigate to Search, Categories, Tickets, and Historical Tickets at `/search`, `/categories`, `/tickets`, and `/historical`. Admin menus are shown only in the Admin UI role.
+- View Admin System Analysis metrics, ticket/category creation counts, category-filtered detail sections, and expandable per-search ticket matches.
+- Navigate to Search, Categories, Tickets, Historical Tickets, and System Analysis at `/search`, `/categories`, `/tickets`, `/historical`, and `/analytics`. Admin menus are shown only in the Admin UI role.
 - Dismiss page feedback manually or let it clear automatically after five seconds. Content uses normal browser scrolling.
 
 ## Technology and structure
@@ -18,6 +19,7 @@ A full-stack support workflow prototype that helps agents find relevant, resolve
 - **UI:** Angular standalone components, Angular Router, TypeScript, and RxJS.
 - **API:** Node.js, Express, and `pg`.
 - **Data:** PostgreSQL `tickets` and `categories` tables. Tickets reference categories by `category_id`; indexes support ticket lookup, tags, and full-text search.
+- **Search analytics:** `search_usage` stores query text/time/outcome/count; `search_usage_matches` stores matched ticket IDs and category snapshots. Analytics begins after schema initialization and persists independently of ticket deletion.
 - **Source:** `support-ticket-management/ui`, `backend`, `starter_kit`, and `style-specification`.
 
 ## Run locally
@@ -55,11 +57,14 @@ Requirements: Node.js v22+, angular v22.2.0, npm, and PostgreSQL.
 
 5. Open `http://localhost:4200`. Choose **Admin → Manage Historical Tickets** to load the sample records in `starter_kit/data/tickets.json`, then return to Search.
 
+Choose **Admin → System Analysis** to review totals for today (the default), the last 7 or 30 days, or a custom inclusive UTC date range. Summary metrics cover all categories in the selected period. The matched-ticket category filter applies only to the category and search detail sections. The category table shows category creation dates and period ticket counts; search match counts expand inline to show ticket IDs, categories, subjects, statuses, and creation dates.
+
 ## API surface
 
 | Method and path | Purpose |
 |---|---|
 | `GET /api/tickets/availability` | Returns total and resolved ticket counts |
+| `GET /api/tickets/usage?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&categoryId=<id>&page=1` | Returns search metrics, ticket/category creation totals and category details, plus paginated search records; category is optional |
 | `POST /api/tickets/loadHistoricalTickets` | Validates and loads sample tickets; reports inserted, invalid, duplicate, and failed counts |
 | `DELETE /api/tickets/removeHistoricalTickets` | Removes historical ticket records |
 | `GET /api/tickets/search?keyword=...&limit=...` | Searches resolved tickets; limit is optional and capped by the API |

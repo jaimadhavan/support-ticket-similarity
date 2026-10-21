@@ -4,6 +4,7 @@ const fs = require('fs');
 const pool = require('../db');
 const { getSearchTerms, MIN_MATCHED_TERMS } = require('../search-utils');
 const { createLoadSummary } = require('../load-summary');
+const { recordSearchUsage } = require('../search-analytics');
 
 module.exports = {
     getHistoricalTicketAvailability: async function (req, res) {
@@ -255,6 +256,7 @@ searchTicketByKeyword: async function(req, res) {
         
         const words = getSearchTerms(keyword);
         if (words.length === 0) {
+            await recordSearchUsage(pool, String(keyword), []);
             return res.status(400).json({
                 error: 'Your search only contains common words that are ignored. Add specific terms such as a product, feature, or error message.'
             });
@@ -263,6 +265,7 @@ searchTicketByKeyword: async function(req, res) {
         const query = `
             SELECT
                 t.ticket_id,
+                t.category_id,
                 c.name AS category,
                 t.subject,
                 t.description,
@@ -294,6 +297,7 @@ searchTicketByKeyword: async function(req, res) {
         `;
         const result = await pool.query(query, [words, MIN_MATCHED_TERMS, validLimit]);
         const tickets = result.rows;
+        await recordSearchUsage(pool, String(keyword), tickets);
 
         res.json({
             keyword,

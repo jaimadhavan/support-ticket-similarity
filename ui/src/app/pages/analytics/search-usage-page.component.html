@@ -1,0 +1,222 @@
+<section class="usage-page">
+  <header class="usage-heading">
+    <div>
+      <h2>System Analysis</h2>
+      <p>Review search volume and ticket creation activity. Date filters use UTC; searches made before analytics was enabled are not backfilled.</p>
+    </div>
+  </header>
+
+  <section class="usage-filters" aria-label="Search usage filters">
+    <label>
+      Period
+      <select [ngModel]="preset" (ngModelChange)="selectPreset($event)" name="period">
+        <option value="today">Today</option>
+        <option value="last7days">Last 7 days</option>
+        <option value="last30days">Last 30 days</option>
+        <option value="custom">Custom range</option>
+      </select>
+    </label>
+    <label>
+      Start date
+      <input type="date" [(ngModel)]="startDate" (ngModelChange)="onDateChange()" name="startDate" />
+    </label>
+    <label>
+      End date
+      <input type="date" [(ngModel)]="endDate" (ngModelChange)="onDateChange()" name="endDate" />
+    </label>
+    <button class="btn btn-primary" type="button" (click)="loadUsage()" [disabled]="loading()">
+      {{ loading() ? 'Refreshing...' : 'Apply filters' }}
+    </button>
+  </section>
+
+  @if (error()) {
+    <div class="usage-error" role="alert">{{ error() }}</div>
+  }
+
+  <section class="usage-metrics" aria-label="Search usage summary" aria-live="polite">
+    <article class="usage-metric">
+      <span>Total searches</span>
+      <strong>{{ summary().totalSearches }}</strong>
+    </article>
+    <article class="usage-metric success">
+      <span>Searches with matches</span>
+      <strong>{{ summary().successfulMatches }}</strong>
+    </article>
+    <article class="usage-metric empty">
+      <span>Searches without matches</span>
+      <strong>{{ summary().noMatchSearches }}</strong>
+    </article>
+    <article class="usage-metric">
+      <span>Match rate</span>
+      <strong>{{ matchRate }}%</strong>
+    </article>
+    <article class="usage-metric">
+      <span>Matched tickets</span>
+      <strong>{{ summary().totalMatchedTickets }}</strong>
+    </article>
+    <article class="usage-metric">
+      <span>Categories created</span>
+      <strong>{{ summary().categoriesCreated }}</strong>
+    </article>
+    <article class="usage-metric">
+      <span>Tickets created</span>
+      <strong>{{ summary().ticketsCreated }}</strong>
+    </article>
+  </section>
+
+  <section class="detail-filters" aria-label="Detail filters">
+    <label>
+      Matched-ticket category (details only)
+      <select [ngModel]="categoryId" (ngModelChange)="categoryId = $event; onCategoryChange()" name="category">
+        <option [ngValue]="null">All categories</option>
+        @for (category of categories(); track category.id) {
+          <option [ngValue]="category.id">{{ category.name }}{{ category.is_active ? '' : ' (inactive)' }}</option>
+        }
+      </select>
+    </label>
+    <span>Summary metrics above include all categories for the selected period.</span>
+  </section>
+
+  <section class="usage-results category-activity" aria-labelledby="category-activity-heading">
+    <h3 id="category-activity-heading">Tickets created by category</h3>
+    @if (loading()) {
+      <p class="usage-empty" role="status">Loading ticket activity...</p>
+    } @else if (usage()?.ticketsByCategory?.length) {
+      <div class="usage-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Category</th>
+              <th scope="col">Category Created</th>
+              <th scope="col">Tickets created</th>
+              <th scope="col">Ticket Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (category of usage()!.ticketsByCategory; track category.categoryId) {
+              <tr>
+                <td>{{ category.category }}</td>
+                <td>{{ category.categoryCreatedAt | date:'mediumDate':'UTC' }}</td>
+                <td>{{ category.ticketCount }}</td>
+                <td>
+                  @if (category.tickets.length) {
+                    <details>
+                      <summary>View {{ category.ticketCount }} ticket{{ category.ticketCount === 1 ? '' : 's' }}</summary>
+                      <div class="usage-table-wrap detail-table-wrap">
+                        <table>
+                          <thead>
+                            <tr>
+                              <th scope="col">Ticket ID</th>
+                              <th scope="col">Subject</th>
+                              <th scope="col">Status</th>
+                              <th scope="col">Created</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (ticket of category.tickets; track ticket.ticketId) {
+                              <tr>
+                                <td>{{ ticket.ticketId }}</td>
+                                <td>{{ ticket.subject }}</td>
+                                <td>{{ ticket.status }}</td>
+                                <td>{{ ticket.createdAt | date:'medium':'UTC' }}</td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      </div>
+                    </details>
+                  } @else {
+                    <span class="muted">No tickets in this period</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <p class="usage-empty" role="status">No categories are available for the selected filter.</p>
+    }
+  </section>
+
+  <section class="usage-results" aria-labelledby="usage-results-heading">
+    <h3 id="usage-results-heading">Search details</h3>
+    @if (loading()) {
+      <p class="usage-empty" role="status">Loading search usage...</p>
+    } @else if (usage()?.searches?.length) {
+      <div class="usage-table-wrap">
+        <table class="search-details-table">
+          <colgroup>
+            <col class="search-date-column" />
+            <col class="search-text-column" />
+            <col class="search-outcome-column" />
+            <col class="search-matches-column" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th scope="col">Date and time</th>
+              <th scope="col">Search text</th>
+              <th scope="col">Outcome</th>
+              <th scope="col">Matches</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (search of usage()!.searches; track search.id) {
+              <tr>
+                <td>{{ search.searchedAt | date:'medium':'UTC' }}</td>
+                <td class="search-text">{{ search.searchText }}</td>
+                <td>
+                  <span class="outcome" [class.found]="search.matchFound">
+                    {{ search.matchFound ? 'Match found' : 'No match' }}
+                  </span>
+                </td>
+                <td>
+                  @if (search.matchingTickets.length) {
+                    <details class="match-details">
+                      <summary>{{ search.matchCount }} match{{ search.matchCount === 1 ? '' : 'es' }}</summary>
+                      <div class="usage-table-wrap detail-table-wrap">
+                        <table>
+                          <thead>
+                            <tr>
+                              <th scope="col">Ticket ID</th>
+                              <th scope="col">Category</th>
+                              <th scope="col">Subject</th>
+                              <th scope="col">Status</th>
+                              <th scope="col">Ticket Created</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (ticket of search.matchingTickets; track ticket.ticketId) {
+                              <tr>
+                                <td>{{ ticket.ticketId }}</td>
+                                <td>{{ ticket.category }}</td>
+                                <td>{{ ticket.subject || '—' }}</td>
+                                <td>{{ ticket.status || '—' }}</td>
+                                <td>{{ utcDate(ticket.ticketCreatedAt) ? (utcDate(ticket.ticketCreatedAt) | date:'mediumDate':'UTC') : '—' }}</td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      </div>
+                    </details>
+                  } @else {
+                    <span class="muted">0</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <nav class="usage-pagination" aria-label="Search usage pages">
+        <span>Page {{ usage()!.page }} of {{ usage()!.pageCount }}</span>
+        <div>
+          <button class="btn btn-secondary" type="button" (click)="changePage(usage()!.page - 1)" [disabled]="usage()!.page <= 1 || loading()">Previous</button>
+          <button class="btn btn-secondary" type="button" (click)="changePage(usage()!.page + 1)" [disabled]="usage()!.page >= usage()!.pageCount || loading()">Next</button>
+        </div>
+      </nav>
+    } @else if (!error()) {
+      <p class="usage-empty" role="status">No searches found for the selected period and category.</p>
+    }
+  </section>
+</section>

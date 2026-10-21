@@ -4,6 +4,7 @@ const path = require('node:path');
 const test = require('node:test');
 const { getSearchTerms, isGoodMatch } = require('../search-utils');
 const { createLoadSummary } = require('../load-summary');
+const { parseUsageFilters, recordSearchUsage } = require('../search-analytics');
 
 const seed = JSON.parse(fs.readFileSync(
     path.join(__dirname, '..', '..', 'starter_kit', 'data', 'tickets.json'),
@@ -77,4 +78,104 @@ test('duplicate-only skips are reported without implying an insertion failure', 
     assert.equal(summary.skipped, 2);
     assert.equal(summary.failed, 0);
     assert.equal(summary.message, 'Tickets loaded successfully');
+});
+
+test('search usage filters validate dates, category, and page', () => {
+    assert.deepEqual(
+        parseUsageFilters({
+            startDate: '2026-10-01',
+            endDate: '2026-10-21',
+            categoryId: '4',
+            page: '2'
+        }),
+        {
+            startDate: '2026-10-01',
+            endDate: '2026-10-21',
+            categoryId: 4,
+            page: 2
+        }
+    );
+    assert.equal(
+        parseUsageFilters({ startDate: '2026-02-30', endDate: '2026-03-01' }).error,
+        'Valid startDate and endDate are required (YYYY-MM-DD)'
+    );
+    assert.equal(
+        parseUsageFilters({ startDate: '2026-10-22', endDate: '2026-10-21' }).error,
+        'startDate must be on or before endDate'
+    );
+    assert.equal(
+        parseUsageFilters({ startDate: '2026-10-01', endDate: '2026-10-21', categoryId: '0' }).error,
+        'categoryId must be a positive integer'
+    );
+});
+
+test('search usage stores search text and matched tickets in one transaction', async () => {
+    const calls = [];
+    const client = {
+        query: async (sql, params) => {
+            calls.push({ sql: sql.trim(), params });
+            return sql.includes('RETURNING id') ? { rows: [{ id: 17 }] } : { rows: [] };
+        },
+        release: () => calls.push({ sql: 'RELEASE' })
+    };
+    await recordSearchUsage({ connect: async () => client }, 'billing duplicate', [{
+        ticket_id: 'T-1303',
+        category_id: 3,
+        category: 'billing',
+        subject: 'Duplicate charge',
+        status: 'resolved',
+        created_at: '2026-10-20'
+    }]);
+
+    assert.equal(calls[0].sql, 'BEGIN');
+    assert.deepEqual(calls[1].params, ['billing duplicate', true, 1]);
+    assert.deepEqual(calls[2].params, [
+        17,
+        ['T-1303'],
+        [3],
+        ['billing'],
+        ['Duplicate charge'],
+        ['resolved'],
+        ['2026-10-20']
+    ]);
+    assert.match(calls[2].sql, /ticket_subject/);
+    assert.match(calls[2].sql, /ticket_status/);
+    assert.match(calls[2].sql, /ticket_created_at/);
+    assert.equal(calls[3].sql, 'COMMIT');
+    assert.equal(calls[4].sql, 'RELEASE');
+});
+
+test('search usage records no-match attempts without matched-ticket rows', async () => {
+    const calls = [];
+    const client = {
+        query: async (sql, params) => {
+            calls.push({ sql: sql.trim(), params });
+            return sql.includes('RETURNING id') ? { rows: [{ id: 18 }] } : { rows: [] };
+        },
+        release: () => calls.push({ sql: 'RELEASE' })
+    };
+    await recordSearchUsage({ connect: async () => client }, 'unfamiliar product', []);
+
+    assert.deepEqual(calls[1].params, ['unfamiliar product', false, 0]);
+    assert.equal(calls.some(call => call.sql.includes('INSERT INTO search_usage_matches')), false);
+    assert.equal(calls[2].sql, 'COMMIT');
+});
+
+test('search usage rolls back and surfaces persistence failures', async () => {
+    const calls = [];
+    const failure = new Error('insert failed');
+    const client = {
+        query: async sql => {
+            calls.push(sql.trim());
+            if (sql.includes('INSERT INTO search_usage ')) {
+                throw failure;
+            }
+            return { rows: [] };
+        },
+        release: () => calls.push('RELEASE')
+    };
+    await assert.rejects(recordSearchUsage({ connect: async () => client }, 'invoice', []), failure);
+    assert.equal(calls[0], 'BEGIN');
+    assert.match(calls[1], /INSERT INTO search_usage/);
+    assert.deepEqual(calls.slice(2), ['ROLLBACK', 'RELEASE']);
 });

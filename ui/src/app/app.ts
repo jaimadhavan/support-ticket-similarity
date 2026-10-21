@@ -7,6 +7,7 @@ import { TicketService } from './services/ticket.service';
 import { CategoriesPageComponent } from './pages/categories/categories-page.component';
 import { TicketsPageComponent } from './pages/tickets/tickets-page.component';
 import { HistoricalPageComponent } from './pages/historical/historical-page.component';
+import { SearchUsagePageComponent } from './pages/analytics/search-usage-page.component';
 import { SearchPageComponent } from './pages/search/search-page.component';
 import {
   AppPage,
@@ -30,7 +31,8 @@ import { ApplicationNavigationComponent } from './shared/application-navigation.
     SearchPageComponent,
     CategoriesPageComponent,
     TicketsPageComponent,
-    HistoricalPageComponent
+    HistoricalPageComponent,
+    SearchUsagePageComponent
   ],
   templateUrl: './app.html',
   styleUrl: './app.css'
@@ -98,7 +100,7 @@ export class App implements OnDestroy, OnInit {
 
   private syncPageFromRoute() {
     const path = this.router.url.split(/[?#]/, 1)[0].replace(/^\/|\/$/g, '');
-    const pages: AppPage[] = ['search', 'categories', 'tickets', 'historical'];
+    const pages: AppPage[] = ['search', 'categories', 'tickets', 'historical', 'analytics'];
     if (!pages.includes(path as AppPage)) {
       return;
     }

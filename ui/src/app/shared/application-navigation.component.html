@@ -24,5 +24,11 @@
       [class.active]="activePage === 'historical'"
       [attr.aria-current]="activePage === 'historical' ? 'page' : null"
     >Manage Historical Tickets</a>
+    <a
+      class="nav-button"
+      [routerLink]="['/analytics']"
+      [class.active]="activePage === 'analytics'"
+      [attr.aria-current]="activePage === 'analytics' ? 'page' : null"
+    >System Analysis</a>
   }
 </nav>

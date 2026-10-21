@@ -3,7 +3,12 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { HistoricalLoadSummary, HistoricalRemovalSummary, TicketSearchResponse } from '../app.models';
+import {
+  HistoricalLoadSummary,
+  HistoricalRemovalSummary,
+  SearchUsageResponse,
+  TicketSearchResponse
+} from '../app.models';
 
 export interface Category {
   id: number;
@@ -93,5 +98,18 @@ export class TicketService {
     return this.http.get<TicketSearchResponse>(
       `${this.apiUrl}/search?keyword=${encodeURIComponent(keyword)}&limit=${resultLimit}`
     );
+  }
+
+  getSearchUsage(
+    startDate: string,
+    endDate: string,
+    categoryId: number | null,
+    page: number
+  ): Observable<SearchUsageResponse> {
+    const params = new URLSearchParams({ startDate, endDate, page: String(page) });
+    if (categoryId !== null) {
+      params.set('categoryId', String(categoryId));
+    }
+    return this.http.get<SearchUsageResponse>(`${this.apiUrl}/usage?${params}`);
   }
 }

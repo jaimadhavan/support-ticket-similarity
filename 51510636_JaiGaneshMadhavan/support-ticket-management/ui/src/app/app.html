@@ -57,4 +57,7 @@
       (dismissFeedback)="dismissFeedback()"
     />
   }
+  @if (userRole() === 'Admin' && activePage() === 'analytics') {
+    <app-search-usage-page />
+  }
 </div>
