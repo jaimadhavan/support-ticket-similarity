@@ -18,7 +18,7 @@ A full-stack support workflow prototype that helps agents find relevant, resolve
 
 - **UI:** Angular standalone components, Angular Router, TypeScript, and RxJS.
 - **API:** Node.js, Express, and `pg`.
-- **Data:** PostgreSQL `tickets` and `categories` tables. Tickets reference categories by `category_id`; indexes support ticket lookup, tags, and full-text search.
+- **Data:** PostgreSQL `tickets` and `categories` tables. Tickets reference categories by `category_id`; resolved tickets store combined subject/description/resolution text in `searchable_text`, backed by a full-text index.
 - **Search analytics:** `search_usage` stores query text/time/outcome/count; `search_usage_matches` stores matched ticket IDs and category snapshots. Analytics begins after schema initialization and persists independently of ticket deletion.
 - **Source:** `support-ticket-management/ui`, `backend`, `starter_kit`, and `style-specification`.
 
@@ -58,6 +58,8 @@ Requirements: Node.js v22+, angular v22.2.0, npm, and PostgreSQL.
 5. Open `http://localhost:4200`. Choose **Admin → Manage Historical Tickets** to load the sample records in `starter_kit/data/tickets.json`, then return to Search.
 
 Choose **Admin → System Analysis** to review totals for today (the default), the last 7 or 30 days, or a custom inclusive UTC date range. Summary metrics cover all categories in the selected period. The matched-ticket category filter applies only to the category and search detail sections. The category table shows category creation dates and period ticket counts; search match counts expand inline to show ticket IDs, categories, subjects, statuses, and creation dates.
+
+Selecting the **Admin** role opens System Analysis. A database trigger maintains `tickets.searchable_text` from subject, description, and resolution notes for resolved tickets, clears it for other statuses, and the schema update backfills existing resolved tickets.
 
 ## API surface
 

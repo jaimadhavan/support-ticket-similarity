@@ -72,6 +72,8 @@ export class App implements OnDestroy, OnInit {
     if (role === 'Support Agent') {
       this.removeConfirmationOpen.set(false);
       this.navigateTo('search');
+    } else {
+      this.navigateTo('analytics');
     }
   }
 

@@ -86,7 +86,9 @@ describe('App', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.userRole()).toBe('Admin');
+    expect(fixture.componentInstance.activePage()).toBe('analytics');
     expect(fixture.nativeElement.textContent).toContain('Manage Tickets');
+    expect(fixture.nativeElement.textContent).toContain('System Analysis');
   });
 
   it('keeps one shared application header while switching between pages', async () => {
@@ -120,6 +122,7 @@ describe('App', () => {
     await fixture.whenStable();
     fixture.componentInstance.changeUserRole('Admin');
     fixture.detectChanges();
+    expect(fixture.componentInstance.activePage()).toBe('analytics');
 
     for (const page of ['search', 'categories', 'tickets', 'historical', 'analytics'] as const) {
       fixture.componentInstance.navigateTo(page);

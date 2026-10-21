@@ -18,11 +18,48 @@ CREATE TABLE IF NOT EXISTS tickets (
     tags TEXT[],
     created_at DATE NOT NULL,
     status VARCHAR(50) NOT NULL,
+    searchable_text TEXT,
     created_at_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 ALTER TABLE tickets
-    ADD COLUMN IF NOT EXISTS created_at_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+    ADD COLUMN IF NOT EXISTS created_at_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ADD COLUMN IF NOT EXISTS searchable_text TEXT;
+
+CREATE OR REPLACE FUNCTION set_ticket_searchable_text()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF lower(NEW.status) = 'resolved' THEN
+        NEW.searchable_text := concat_ws(
+            ' ',
+            NULLIF(trim(NEW.subject), ''),
+            NULLIF(trim(NEW.description), ''),
+            NULLIF(trim(NEW.resolution_notes), '')
+        );
+    ELSE
+        NEW.searchable_text := NULL;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_set_ticket_searchable_text ON tickets;
+CREATE TRIGGER trg_set_ticket_searchable_text
+    BEFORE INSERT OR UPDATE OF status, subject, description, resolution_notes
+    ON tickets
+    FOR EACH ROW
+    EXECUTE FUNCTION set_ticket_searchable_text();
+
+UPDATE tickets
+SET searchable_text = CASE
+    WHEN lower(status) = 'resolved' THEN concat_ws(
+        ' ',
+        NULLIF(trim(subject), ''),
+        NULLIF(trim(description), ''),
+        NULLIF(trim(resolution_notes), '')
+    )
+    ELSE NULL
+END;
 
 CREATE TABLE IF NOT EXISTS search_usage (
     id BIGSERIAL PRIMARY KEY,
@@ -114,6 +151,7 @@ ALTER TABLE tickets ALTER COLUMN category_id SET NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_tickets_ticket_id ON tickets(ticket_id);
 CREATE INDEX IF NOT EXISTS idx_tickets_category_id ON tickets(category_id);
 CREATE INDEX IF NOT EXISTS idx_tickets_tags ON tickets USING GIN(tags);
-CREATE INDEX IF NOT EXISTS idx_tickets_search ON tickets USING GIN(
-    to_tsvector('english', coalesce(subject, '') || ' ' || coalesce(description, '') || ' ' || coalesce(resolution_notes, ''))
+DROP INDEX IF EXISTS idx_tickets_search;
+CREATE INDEX IF NOT EXISTS idx_tickets_searchable_text ON tickets USING GIN(
+    to_tsvector('english', coalesce(searchable_text, ''))
 );

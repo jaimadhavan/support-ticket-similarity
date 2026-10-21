@@ -276,7 +276,7 @@ searchTicketByKeyword: async function(req, res) {
                 array_agg(DISTINCT q.term ORDER BY q.term) AS "matchedWords",
                 count(DISTINCT q.term)::int AS "matchCount",
                 max(ts_rank(
-                    to_tsvector('english', coalesce(t.subject, '') || ' ' || coalesce(t.description, '') || ' ' || coalesce(t.resolution_notes, '')),
+                    to_tsvector('english', coalesce(t.searchable_text, '')),
                     plainto_tsquery('english', q.term)
                 )) AS relevance
             FROM tickets t
@@ -284,12 +284,12 @@ searchTicketByKeyword: async function(req, res) {
             CROSS JOIN unnest($1::text[]) AS q(term)
             WHERE lower(t.status) = 'resolved'
               AND (
-                    to_tsvector('english', coalesce(t.subject, '') || ' ' || coalesce(t.description, '') || ' ' || coalesce(t.resolution_notes, ''))
+                    to_tsvector('english', coalesce(t.searchable_text, ''))
                     @@ plainto_tsquery('english', q.term)
                     OR q.term = ANY(t.tags)
               )
             GROUP BY t.id, t.ticket_id, c.name, t.subject, t.description,
-                     t.resolution_notes, t.tags, t.created_at, t.status
+                     t.resolution_notes, t.tags, t.created_at, t.status, t.searchable_text
             HAVING count(DISTINCT q.term) >= $2
                 OR cardinality($1::text[]) = 1
             ORDER BY "matchCount" DESC, relevance DESC, t.created_at DESC
